@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
+import seaborn as sb
 import numpy as np
 from sklearn.metrics import mean_squared_error
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV, KFold, cross_val_score
 
 def model_clusters(model_list, X_train, X_test, X_test_ns, naive_col, col_mask, y_train, y_test):
     if len(model_list) != len(X_train.cluster.unique()):
@@ -59,3 +60,27 @@ def clust_grid(model, params, X_train, y_train, mask_cols):
         grid.fit(X_train[mask_cols][train_clust_mask], y_train[train_clust_mask])
         print(grid.best_params_)
         print()
+
+def class_crossval_plot(X, y, models, scoring='neg_mean_absolute_error'):
+    results = []
+    names = []
+    all_scores = []
+    print('Mod - Avg - Std Dev')
+    print('---   ---   -------')
+    for name, model in models:
+        kfold = KFold(n_splits=10)
+        cv_results = cross_val_score(model, X, y, cv=kfold, scoring=scoring, n_jobs=-1)
+        results.append(cv_results)
+        names.append(name)
+        print('{}: {:.2f} ({:2f})'.format(name, cv_results.mean(), cv_results.std()))
+
+    fig = plt.figure(figsize=(25, 18))
+    plt.tight_layout()
+    fig.suptitle('Algorithm Comparison of CrossVal Scores')
+    ax = fig.add_subplot(111)
+    sb.violinplot(data=results, orient='v')
+    ax.set_xticklabels(names, rotation=45, ha='right')
+    ax.set_ylabel('K-Fold CV Negative Mean Abs. Error')
+    ax.set_xlabel('Model')
+    plt.grid(alpha=0.4)
+    plt.savefig('images/model_selection_shrink_value.png')
