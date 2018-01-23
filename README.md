@@ -43,7 +43,7 @@ asd;fdsf
 
 ### Customer Segmentation ###
 
-Tsafdsa
+<img src="/images/Clusters.png" width="70%">
 
 ### Model Selection ###
 
