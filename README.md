@@ -6,9 +6,10 @@
 3. [Methods](#methods)
 4. [The Data](#the-data)
 5. [Customer Segmentation](#customer-segmentation)
-6. [Per Item Prediction](#per-item-prediction)
-7. [Store Forcasting](#store-forcasting)
-8. [Future Directions](#future-directions)
+6. [Model Selection](#model-selection)
+7. [Per Item Prediction](#per-item-prediction)
+8. [Store Forcasting](#store-forcasting)
+9. [Future Directions](#future-directions)
 
 ## Background ##
 
@@ -43,6 +44,10 @@ asd;fdsf
 ### Customer Segmentation ###
 
 Tsafdsa
+
+### Model Selection ###
+
+<img src="/images/model_selection.png" width="70%">
 
 ### Per Item Prediction ###
 
