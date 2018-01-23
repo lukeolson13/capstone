@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+from sklearn.base import BaseEstimator, TransformerMixin
+import pandas as pd
+import numpy as np
+from model_functions import clust_grid
+
+__author__ = "Luke Olson"
+
+class PredModel(BaseEstimator, TransformerMixin):
+    """
+    A generic class
+    """
+
+    def __init__(self, model, param_grid, model_mask_cols):
+        """
+        Constructor
+        """
+        self.model = model
+        self.param_grid = param_grid
+        self.model_mask_cols = model_mask_cols
+
+    def grid(self):
+        self.best_params_list = clust_grid(self.model, self.param_grid, self.X, self.y, self.model_mask_cols)
+
+    def create_models(self):
+        self.model_list = []
+        for i in len(self.X.cluster.unique()):
+            foo_model = self.model
+            foo_model.set_params(self.best_params_list[i])
+            self.model_list.append(foo_model)
+
+    def fit(self, X, y=None):
+        self.X = X
+        self.y = y
+        self.grid()
+        self.create_models()
+        for index, model in enumerate(self.model_list):
+            fit_clust_mask = self.X.cluster == str(index)
+            model.fit(self.X[ self.model_mask_cols ][fit_clust_mask], self.y[fit_clust_mask])
+
+    def predict(self, X_pred):
+        for index, model in enumerate(self.model_list):
+            pred_clust_mask = X_pred.cluster == str(index)
+            y_pred_clust = model.predict(X_pred[ self.model_mask_cols ][pred_clust_mask])
+        return self.df
+
+if __name__ == "__main__":
+    pass

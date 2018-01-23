@@ -51,6 +51,7 @@ def plot_rmse(cluster_rmse, naive_rmse, num_clusters, title='Root-Mean-Square Er
     plt.show()
 
 def clust_grid(model, params, X_train, y_train, mask_cols):
+    best_params_list = []
     for clust in range(0, len(X_train.cluster.unique())):
         print()
         print('cluster: ', clust + 1)
@@ -58,8 +59,8 @@ def clust_grid(model, params, X_train, y_train, mask_cols):
         train_clust_mask = X_train.cluster == str(clust)
         grid = GridSearchCV(test_model, param_grid=params, verbose=0)
         grid.fit(X_train[mask_cols][train_clust_mask], y_train[train_clust_mask])
-        print(grid.best_params_)
-        print()
+        best_params_list.append(grid.best_params_)
+    return best_params_list
 
 def class_crossval_plot(X, y, models, scoring='neg_mean_absolute_error'):
     results = []
