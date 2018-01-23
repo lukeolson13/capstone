@@ -36,7 +36,7 @@ class StdScale(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, df):
-        self.df = df
+        self.df = df.copy()
         if not self.std and not self.scale:
             return self.df
         self.df_new = self.df.copy()

@@ -41,7 +41,7 @@ class PublicData(BaseEstimator, TransformerMixin):
 
 
     def transform(self, df):
-        self.df = df
+        self.df = df.copy()
         self._load_data()
         self._join()
         # drop all rows that contain nan

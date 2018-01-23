@@ -37,13 +37,16 @@ class Split(BaseEstimator, TransformerMixin):
 
         return X_train, X_test, y_train, y_test
 
-    def fit(self, df, y=None):
+    def fit(self, df_orig, cust_table_orig, y=None):
         return self
 
-    def transform(self, df):
+    def transform(self, df_orig, cust_table_orig):
+        df = df_orig.copy()
+        cust_table = cust_table_orig.copy()
+        df = df.join(cust_table[['cluster']], on='address1', how='left')
         X, y = self.X_y(df)
         if self.split_by_time:
-            X_train, X_test, y_train, y_test = time_split(df)
+            X_train, X_test, y_train, y_test = self.time_split(df)
         else:
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=X.cluster.values)
         return X, y, X_train, X_test, y_train, y_test

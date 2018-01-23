@@ -11,13 +11,12 @@ class PredModel(BaseEstimator, TransformerMixin):
     A generic class
     """
 
-    def __init__(self, model, param_grid, model_mask_cols):
+    def __init__(self, model, param_grid):
         """
         Constructor
         """
         self.model = model
         self.param_grid = param_grid
-        self.model_mask_cols = model_mask_cols
 
     def grid(self):
         self.best_params_list = clust_grid(self.model, self.param_grid, self.X, self.y, self.model_mask_cols)
@@ -29,9 +28,11 @@ class PredModel(BaseEstimator, TransformerMixin):
             foo_model.set_params(self.best_params_list[i])
             self.model_list.append(foo_model)
 
-    def fit(self, X, y=None):
+    def fit(self, X, y):
         self.X = X
         self.y = y
+        numb_no_time_mask = (self.X.dtypes == int) | (self.X.dtypes == np.float64) | (self.X.dtypes == np.uint8)
+        self.model_mask_cols = self.X.columns[numb_no_time_mask]
         self.grid()
         self.create_models()
         for index, model in enumerate(self.model_list):
@@ -39,10 +40,12 @@ class PredModel(BaseEstimator, TransformerMixin):
             model.fit(self.X[ self.model_mask_cols ][fit_clust_mask], self.y[fit_clust_mask])
 
     def predict(self, X_pred):
+        y_pred = [np.nan] * len(X_pred)
         for index, model in enumerate(self.model_list):
             pred_clust_mask = X_pred.cluster == str(index)
             y_pred_clust = model.predict(X_pred[ self.model_mask_cols ][pred_clust_mask])
-        return self.df
+            y_pred[pred_clust_mask] = y_pred_clust
+        return y_pred
 
 if __name__ == "__main__":
     pass

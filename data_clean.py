@@ -82,7 +82,7 @@ class DataClean(BaseEstimator, TransformerMixin):
         self.df.dropna(axis=0, inplace=True)
 
     def transform(self, df):
-        self.df = df
+        self.df = df.copy()
         self.data_type()
         self.create()
         self.drop()

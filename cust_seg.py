@@ -47,7 +47,7 @@ class CustSeg(BaseEstimator, TransformerMixin):
 
     def build_cust_table(self):
         self.cust_table = self.df.groupby(['address1']).mean()[['qty_shrink_per_day', 'shrink_value_per_day', 'POP2010',
-                                                      'FD_ratio', 'unemp_rate', 'dens_sq_mile', ]].reset_index()
+            'FD_ratio', 'unemp_rate', 'dens_sq_mile', ]].reset_index()
         self.cust_table.set_index('address1', inplace=True)
 
         city_i = self.df.columns.get_loc('city')
@@ -86,7 +86,7 @@ class CustSeg(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, df):
-        self.df = df
+        self.df = df.copy()
         self.build_cust_table()
         self._std_cust_table()
         self._cluster()

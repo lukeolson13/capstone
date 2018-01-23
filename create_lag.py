@@ -114,7 +114,7 @@ class CreateLag(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, df):
-        self.df = df
+        self.df = df.copy()
         self.lag()
         if self.remove_nan_rows:
             self.nans()
