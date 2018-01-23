@@ -25,7 +25,6 @@ The goals of this project are as follows:
 4. Flag stores that appear to have much higher shrink compared with others in their area
 
 ## Methods ##
-
 1. Clean and engineer large dataset in order to model shrink value
 2. Pull in public data sources to better define store demographics
 3. Customer segmentation on a store by store basis
@@ -71,7 +70,7 @@ From here, Random Forests, Gradient Boosting, and Multilayer Perceptron were fur
 For the item prediction model, the goal was to be able to predict what an item's shrink value would be prior to a salesman entering the store. To do this all item level features were combined with store level features and public data. These features were then used to fit the Multilayer Perceptron model, one for each cluster.
 These predictions were then compared against the actual values, and a Root-Mean-Square-Error (RMSE) calculated. This was compared against the naive RMSE, which was basically assuming the amount of shrink value for a particular item at a specific location would be the same as it was on the previous value. The two are compared below:
 
-<img src="/images/pred_model_rmse.png" width="100%">
+<img src="/images/pred_model_rmse.png" width="60%">
 
 As you can see, the new model significantly lowered the averaged RMSE (averaged across each of the cluster models).
 
@@ -81,21 +80,23 @@ For the store level forcasting, many of the features used in the prediction mode
 
 Running a similar test to the prediction model (just with the limited features), the forcast model was about on par with prediciting the next shrink value as the naive model: 
 
-<img src="/images/forc_model_test.png" width="100%">
+<img src="/images/forc_model_test.png" width="60%">
 
 This wasn't super surprising, given the limited amount of data.
 
 Next, future visit predictions were made, and an RMSE was again calculated off of the actual value (the test set was roughly the last month of data available) and compared to the naive approach (assuming the last visit shrink value, extrapolated into the future). Now, the forcast model was able to pick up better on trends within each store's shrink, and combine this with store demographics to come up with better predictions than the forcast model:
 
-<img src="/images/forc_model_rmse1.png" width="100%">
+<img src="/images/forc_model_rmse1.png" width="60%">
 
-<img src="/images/forc_model_rmse2.png" width="100%">
+<img src="/images/forc_model_rmse2.png" width="60%">
 
-<img src="/images/forc_model_rmse3.png" width="100%">
+<img src="/images/forc_model_rmse3.png" width="60%">
 
 *Note: there are blank values as the time visit periods go forward due to certain clusters of stores not having information.
 
 ### Store Flag ###
+
+<img src="/images/flag.png" width="5%">
 
 Given the relative success of the forcasting model, a method for flagging certain customers was developed. This essentially predicts shrink value for customers X periods into the future, and then allows a user determine what time period to look at. Then, a total shrink value for that time period is created for each customer. The user can then give the method thresholds on dollar amounts or multiples of a minimum value, and customer stores that breach this threshold compared with other stores in the same zip-code are flagged as problematic.
 
