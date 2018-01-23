@@ -3,6 +3,11 @@ from sklearn.metrics import silhouette_score
 from scipy.spatial.distance import pdist, squareform
 from scipy.cluster.hierarchy import linkage, dendrogram
 import matplotlib.pyplot as plt
+from matplotlib import rc
+
+font = {'size': 20}
+rc('font', **font)
+plt.style.use('seaborn-bright')
 
 def kmeans(X_km, clusters):
     SSE_arr = []
@@ -29,6 +34,7 @@ def elbow_plot(clusters, SSE_arr):
     plt.xticks(clusters)
     plt.xlabel('Number of Clusters')
     plt.ylabel('Sum of Squares Error (SSE)')
+    plt.savefig('images/elbow.png')
     plt.show()
 
 def silhouette_plot(clusters, ss_arr):
@@ -39,6 +45,7 @@ def silhouette_plot(clusters, ss_arr):
     plt.xticks(clusters)
     plt.xlabel('Number of Clusters')
     plt.ylabel('Silhouette Score')
+    plt.savefig('images/silhouette.png')
     plt.show()
 
 def heir_clust(X_hc, thresh, dist_metric='cosine', num_params_to_display=50):

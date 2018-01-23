@@ -1,8 +1,13 @@
 import matplotlib.pyplot as plt
+from matplotlib import rc
 import seaborn as sb
 import numpy as np
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import GridSearchCV, KFold, cross_val_score
+
+font = {'size': 20}
+rc('font', **font)
+plt.style.use('seaborn-bright')
 
 def model_clusters(model_list, X_train, X_test, X_test_ns, naive_col, col_mask, y_train, y_test):
     if len(model_list) != len(X_train.cluster.unique()):
@@ -84,4 +89,4 @@ def class_crossval_plot(X, y, models, scoring='neg_mean_absolute_error'):
     ax.set_ylabel('K-Fold CV Negative Mean Abs. Error')
     ax.set_xlabel('Model')
     plt.grid(alpha=0.4)
-    plt.savefig('images/model_selection_shrink_value.png')
+    plt.savefig('images/model_selection.png')
