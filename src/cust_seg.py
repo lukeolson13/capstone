@@ -89,7 +89,7 @@ class CustSeg(BaseEstimator, TransformerMixin):
         self.shrink_cust_cols.remove('avg_UPC_per_visit')
         self.shrink_cust_cols.remove('days_between_visits')
         cust_kmeans = KMeans(n_clusters=self.clusters, max_iter=10000, tol=0.00001, n_jobs=-1)
-        pred = cust_kmeans.fit_predict(self.std_cust_table[shrink_cust_cols])
+        pred = cust_kmeans.fit_predict(self.std_cust_table[self.shrink_cust_cols])
         self.cust_table['cluster'] = pred.astype(str)
 
     def plot_clust(self, cust_table):

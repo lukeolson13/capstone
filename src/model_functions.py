@@ -4,22 +4,17 @@ import seaborn as sb
 import numpy as np
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import GridSearchCV, KFold, cross_val_score
+from collections import defaultdict
 
 font = {'size': 20}
 rc('font', **font)
 plt.style.use('seaborn-bright')
 
-def model_clusters(model_list, X_train, X_test, X_test_ns, naive_col, col_mask, y_train, y_test):
-    if len(model_list) != len(X_train.cluster.unique()):
-        print('Model list does not match number of clusters')
-        return
+def model_clusters(model_list, X_test, X_test_ns, naive_col, col_mask, y_test):
     cluster_rmse = []
     naive_rmse = []
     for index, model in enumerate(model_list):
-        print('cluster: ',index + 1)
-        train_clust_mask = X_train.cluster == str(index)
         test_clust_mask = X_test.cluster == str(index)
-        model.fit(X_train[col_mask][train_clust_mask], y_train[train_clust_mask])
         y_pred = model.predict(X_test[col_mask][test_clust_mask])
         y_naive = X_test_ns[test_clust_mask][naive_col].values
         cluster_rmse.append(np.sqrt(mean_squared_error(y_test[test_clust_mask], y_pred)))
@@ -29,7 +24,7 @@ def model_clusters(model_list, X_train, X_test, X_test_ns, naive_col, col_mask, 
             argsort = np.argsort(-model.feature_importances_)[:5]
             print(col_mask[argsort])
             print()
-    return cluster_rmse, naive_rmse, model_list
+    return cluster_rmse, naive_rmse
 
 def avg_dec(cluster_rmse, naive_rmse):
     avg_dec = []
@@ -53,7 +48,7 @@ def plot_rmse(cluster_rmse, naive_rmse, num_clusters, title='Root-Mean-Square Er
     ax.grid(alpha=0.4)
     ax.legend()
     print('Average decrease: {}%'.format(round(avg_dec(cluster_rmse, naive_rmse), 3) * 100))
-    plt.savefig('../images/{}.png'.format(title))
+    plt.savefig('../images/{}.png'.format(title.replace(" ", "")))
     plt.show()
 
 def clust_grid(model, params, X_train, y_train, mask_cols):

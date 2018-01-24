@@ -38,6 +38,7 @@ class PredModel(BaseEstimator, TransformerMixin):
         for index, model in enumerate(self.model_list):
             fit_clust_mask = self.X.cluster == str(index)
             model.fit(self.X[ self.model_mask_cols ][fit_clust_mask], self.y[fit_clust_mask])
+        return self.model_list
 
     def predict(self, X_pred):
         y_pred = [np.nan] * len(X_pred)
