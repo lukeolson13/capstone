@@ -44,7 +44,9 @@ class PredModel(BaseEstimator, TransformerMixin):
         for index, model in enumerate(self.model_list):
             pred_clust_mask = X_pred.cluster == str(index)
             y_pred_clust = model.predict(X_pred[ self.model_mask_cols ][pred_clust_mask])
-            y_pred[pred_clust_mask] = y_pred_clust
+            mask_indices = np.where(pred_clust_mask == True)[0]
+            for place, index in enumerate(mask_indices):
+                y_pred[index] = y_pred_clust[place]
         return y_pred
 
 if __name__ == "__main__":

@@ -34,7 +34,7 @@ def elbow_plot(clusters, SSE_arr):
     plt.xticks(clusters)
     plt.xlabel('Number of Clusters')
     plt.ylabel('Sum of Squares Error (SSE)')
-    plt.savefig('images/elbow.png')
+    plt.savefig('../images/elbow.png')
     plt.show()
 
 def silhouette_plot(clusters, ss_arr):
@@ -45,7 +45,7 @@ def silhouette_plot(clusters, ss_arr):
     plt.xticks(clusters)
     plt.xlabel('Number of Clusters')
     plt.ylabel('Silhouette Score')
-    plt.savefig('images/silhouette.png')
+    plt.savefig('../images/silhouette.png')
     plt.show()
 
 def heir_clust(X_hc, thresh, dist_metric='cosine', num_params_to_display=50):
@@ -59,5 +59,5 @@ def heir_clust(X_hc, thresh, dist_metric='cosine', num_params_to_display=50):
                    color_threshold=thresh, leaf_font_size=25) #color threshold number sets the color change
         ax.set_title('{} linkage'.format(linkmethod), fontsize=40)
         ax.grid(alpha=0.3)
-    plt.savefig('images/clust.png'.format(linkmethod))
+    plt.savefig('../images/heir_clust.png'.format(linkmethod))
     plt.show()

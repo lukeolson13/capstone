@@ -25,9 +25,9 @@ class Forcast(BaseEstimator, TransformerMixin):
 
     def _create_models(self):
         self.model_list = []
-        for i in len(self.X.cluster.unique()):
+        for i in range(0, len(self.X.cluster.unique())):
             foo_model = self.model
-            foo_model.set_params(self.best_params_list[i])
+            foo_model.set_params(**self.best_params_list[i])
             self.model_list.append(foo_model)
 
     def _update_cust_table(self, add, i, pred):

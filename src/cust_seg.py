@@ -3,6 +3,13 @@ from sklearn.base import BaseEstimator, TransformerMixin
 import pandas as pd
 from sklearn.cluster import KMeans
 from std_scale import StdScale
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+from matplotlib import rc
+
+font = {'size': 20}
+rc('font', **font)
+plt.style.use('seaborn-bright')
 
 __author__ = "Luke Olson"
 
@@ -11,11 +18,12 @@ class CustSeg(BaseEstimator, TransformerMixin):
     A generic class
     """
 
-    def __init__(self, clusters=4):
+    def __init__(self, clusters=4, plot=False):
         """
         Constructor
         """
         self.clusters = clusters
+        self.plot = plot
 
     def _last_visit(self, row):
         add = row.name
@@ -77,10 +85,28 @@ class CustSeg(BaseEstimator, TransformerMixin):
 
     def _cluster(self):
         shrink_cust_mask = (self.cust_table.dtypes == float)
-        shrink_cust_cols = self.cust_table.columns[ shrink_cust_mask ]
+        self.shrink_cust_cols = list(self.cust_table.columns[ shrink_cust_mask ])
+        self.shrink_cust_cols.remove('avg_UPC_per_visit')
+        self.shrink_cust_cols.remove('days_between_visits')
         cust_kmeans = KMeans(n_clusters=self.clusters, max_iter=10000, tol=0.00001, n_jobs=-1)
         pred = cust_kmeans.fit_predict(self.std_cust_table[shrink_cust_cols])
         self.cust_table['cluster'] = pred.astype(str)
+
+    def plot_clust(self, cust_table):
+        cust_pca = PCA(2)
+        pcas = []
+        clusts = cust_table.cluster.unique()
+        for clust in clusts:
+            pca = cust_pca.fit_transform(cust_table[ cust_table.cluster == clust][self.shrink_cust_cols])
+            pcas.append(pca)
+
+        plt.figure(figsize=(10,10))
+        for i, pca in enumerate(pcas):
+            plt.scatter(pca[:,0], pca[:,1], label=clusts[i])
+        plt.legend()
+        plt.grid(alpha=0.3)
+        plt.savefig('../images/cluster.png')
+        plt.show()
 
     def fit(self, df, y=None):
         return self
@@ -90,6 +116,8 @@ class CustSeg(BaseEstimator, TransformerMixin):
         self.build_cust_table()
         self._std_cust_table()
         self._cluster()
+        if self.plot:
+            self.plot_clust(self.cust_table)
         return self.cust_table
 
 if __name__ == "__main__":

@@ -17,9 +17,6 @@ class DataClean(BaseEstimator, TransformerMixin):
         """
         self.remove_nan_rows = remove_nan_rows
 
-    def fit(self, df, y=None):
-        return self
-
     def _date_to_int(self, row, col):
         index = self.df.columns.get_loc(col)
         date = row[index]
@@ -80,6 +77,9 @@ class DataClean(BaseEstimator, TransformerMixin):
 
     def nans(self):
         self.df.dropna(axis=0, inplace=True)
+
+    def fit(self, df, y=None):
+        return self
 
     def transform(self, df):
         self.df = df.copy()

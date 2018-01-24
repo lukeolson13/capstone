@@ -17,16 +17,13 @@ class PublicData(BaseEstimator, TransformerMixin):
         self.include_crime = include_crime
         self.remove_nan_rows = remove_nan_rows
 
-    def fit(self, df, y=None):
-        return self
-
     def _load_data(self):
-        self.fd = pd.read_pickle('data/Food_Deserts/FD_clean.pkl').set_index('Zip Code')
-        self.unemp = pd.read_pickle('data/Unemployment/unemp_clean.pkl').set_index('Zip')
-        #self.inc = pd.read_pickle('data/Income/income_clean.pkl').set_index('ZIPCODE')
-        self.dens = pd.read_pickle('data/Pop_Density/density_clean.pkl').set_index('Zip/ZCTA')
+        self.fd = pd.read_pickle('../data/Food_Deserts/FD_clean.pkl').set_index('Zip Code')
+        self.unemp = pd.read_pickle('../data/Unemployment/unemp_clean.pkl').set_index('Zip')
+        #self.inc = pd.read_pickle('../data/Income/income_clean.pkl').set_index('ZIPCODE')
+        self.dens = pd.read_pickle('../data/Pop_Density/density_clean.pkl').set_index('Zip/ZCTA')
         if self.include_crime:
-            self.crime = pd.read_pickle('data/Crime/grouped_clean.pkl').set_index(['state', 'city'])
+            self.crime = pd.read_pickle('../data/Crime/grouped_clean.pkl').set_index(['state', 'city'])
 
     def _join(self):
         self.df = self.df.join(self.fd, on=['zip_code'], how='left')
@@ -39,6 +36,13 @@ class PublicData(BaseEstimator, TransformerMixin):
         self.df['dens_sq_mile'] = self.df['dens/sq_mile'].replace(0, np.nan)
         del self.df['dens/sq_mile']
 
+    def _zip_code_str(self, row):
+        index = self.df.columns.get_loc('zip_code')
+        code = row[index]
+        return str(code).zfill(5)
+
+    def fit(self, df, y=None):
+        return self
 
     def transform(self, df):
         self.df = df.copy()
@@ -47,6 +51,7 @@ class PublicData(BaseEstimator, TransformerMixin):
         # drop all rows that contain nan
         if self.remove_nan_rows:
             self.df.dropna(axis=0, inplace=True)
+        self.df['zip_code'] = self.df.apply(self._zip_code_str, axis=1)
             
         return self.df
 
