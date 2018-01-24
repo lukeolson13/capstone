@@ -76,7 +76,7 @@ As you can see, the new model significantly lowered the averaged RMSE (averaged 
 
 ### Store Forcasting ###
 
-For the store level forcasting, many of the features used in the prediction model couldn't be used. This is because many of the values are determined on the most recent visit to the store. Obviously, these values aren't known about a store 3 months in advance. What this left was store level information (including the public data), and previous visit shrink value data (the lag columns). 
+For the store level forcasting, many of the features used in the prediction model couldn't be used. This is because many of the values are determined on the most recent visit to the store. Obviously, these values aren't known about a store 3 months in advance. What this left was store level information (including the public data), and previous visit shrink value data (the lag columns; see [this Gist](https://gist.github.com/lukeolson13/8047b3ecd54f6d7a02bdc18b8e0212c0) on how this was done). 
 
 Running a similar test to the prediction model (just with the limited features), the forcast model was about on par with prediciting the next shrink value as the naive model: 
 
