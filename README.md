@@ -53,6 +53,8 @@ In order to better model both predictions of item shrink value, as well as forca
    2. KMeans clustering was performed with varying number of clusters
    3. Silhouette scores were calculated, leading to the ideal amount of clusters (4)
 
+<img src="/images/Silhouette.png" width="70%">
+
 <img src="/images/Clusters.png" width="70%">
 
 The above image uses Principal Component Analysis to show weighted combinations of all features in 2-D space which explain the most variance. This is not neccessarily the true distribution of clusters, but is merely a way to visualize the rough distribution of clusters.
