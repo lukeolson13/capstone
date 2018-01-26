@@ -7,7 +7,7 @@ from matplotlib import rc
 
 font = {'size': 20}
 rc('font', **font)
-plt.style.use('seaborn-bright')
+plt.style.use('seaborn-dark-palette')
 
 def kmeans(X_km, clusters):
     SSE_arr = []
@@ -26,7 +26,7 @@ def kmeans(X_km, clusters):
             ss_arr.append(silhouette_score(X_km, clust_num))
     return SSE_arr, ss_arr
 
-def elbow_plot(clusters, SSE_arr):
+def elbow_plot(SSE_arr, clusters):
     plt.figure(figsize=(12,8))
     plt.title('Elbow Plot')
     plt.plot(clusters, SSE_arr)
@@ -35,9 +35,9 @@ def elbow_plot(clusters, SSE_arr):
     plt.xlabel('Number of Clusters')
     plt.ylabel('Sum of Squares Error (SSE)')
     plt.savefig('../images/elbow.png')
-    plt.show()
+    #plt.show()
 
-def silhouette_plot(clusters, ss_arr):
+def silhouette_plot(ss_arr, clusters):
     plt.figure(figsize=(12,8))
     plt.title('Silhouette Scores')
     plt.plot(clusters, ss_arr)
@@ -46,7 +46,7 @@ def silhouette_plot(clusters, ss_arr):
     plt.xlabel('Number of Clusters')
     plt.ylabel('Silhouette Score')
     plt.savefig('../images/silhouette.png')
-    plt.show()
+    #plt.show()
 
 def heir_clust(X_hc, thresh, dist_metric='cosine', num_params_to_display=50):
     # Find distances using pair-wise distances in the array, according to desired metric
@@ -60,4 +60,4 @@ def heir_clust(X_hc, thresh, dist_metric='cosine', num_params_to_display=50):
         ax.set_title('{} linkage'.format(linkmethod), fontsize=40)
         ax.grid(alpha=0.3)
     plt.savefig('../images/heir_clust.png'.format(linkmethod))
-    plt.show()
+    #plt.show()

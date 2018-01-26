@@ -8,7 +8,7 @@ from collections import defaultdict
 
 font = {'size': 20}
 rc('font', **font)
-plt.style.use('seaborn-bright')
+plt.style.use('seaborn-dark-palette')
 
 def model_clusters(model_list, X_test, X_test_ns, naive_col, col_mask, y_test):
     cluster_rmse = []
@@ -21,8 +21,9 @@ def model_clusters(model_list, X_test, X_test_ns, naive_col, col_mask, y_test):
         naive_rmse.append(np.sqrt(mean_squared_error(y_test[test_clust_mask], y_naive)))
         if model.__class__.__name__ == 'RandomForestRegressor':
             print()
-            argsort = np.argsort(-model.feature_importances_)[:5]
-            print(col_mask[argsort])
+            print('Cluster: ', index)
+            argsort = np.argsort(-model.feature_importances_)[:6]
+            print('Six most important features: ', col_mask[argsort])
             print()
     return cluster_rmse, naive_rmse
 
@@ -35,7 +36,7 @@ def avg_dec(cluster_rmse, naive_rmse):
     return np.mean(avg_dec)
 
 def plot_rmse(cluster_rmse, naive_rmse, num_clusters, title='Root-Mean-Square Error'):
-    fig = plt.figure(figsize=(8,8))
+    fig = plt.figure(figsize=(6,6))
     ax = fig.add_subplot(1,1,1)
     clusters = np.arange(0, num_clusters)
     ax.bar(x=clusters, height=cluster_rmse, width=0.4, label='Model')
@@ -49,7 +50,7 @@ def plot_rmse(cluster_rmse, naive_rmse, num_clusters, title='Root-Mean-Square Er
     ax.legend()
     print('Average decrease: {}%'.format(round(avg_dec(cluster_rmse, naive_rmse), 3) * 100))
     plt.savefig('../images/{}.png'.format(title.replace(" ", "")))
-    plt.show()
+    #plt.show()
 
 def clust_grid(model, params, X_train, y_train, mask_cols):
     best_params_list = []
@@ -60,7 +61,9 @@ def clust_grid(model, params, X_train, y_train, mask_cols):
         train_clust_mask = X_train.cluster == str(clust)
         grid = GridSearchCV(test_model, param_grid=params, verbose=0)
         grid.fit(X_train[mask_cols][train_clust_mask], y_train[train_clust_mask])
-        best_params_list.append(grid.best_params_)
+        best_params = grid.best_params_
+        print(best_params)
+        best_params_list.append(best_params)
     return best_params_list
 
 def class_crossval_plot(X, y, models, scoring='neg_mean_absolute_error'):

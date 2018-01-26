@@ -8,17 +8,24 @@ from std_scale import StdScale
 from pred_model import PredModel
 from forcast import Forcast
 from sklearn.neural_network import MLPRegressor
+from sklearn.ensemble import RandomForestRegressor
 import warnings
 warnings.filterwarnings('ignore')
 from model_functions import model_clusters, plot_rmse, forc_model_test
 import numpy as np
+from matplotlib import rc
+import matplotlib.pyplot as plt
 
-def run_cust_seg(df):
+font = {'size': 20}
+rc('font', **font)
+plt.style.use('seaborn-dark-palette')
+
+def run_cust_seg(df, num_clusts=4, plot_clusts=False, plot_sil=False):
 	print('Segmenting Customers...')
 	pub = PublicData(include_crime=False, remove_nan_rows=True)
 	df_public = pub.fit_transform(df)
 
-	cs = CustSeg(clusters=4, plot=True)
+	cs = CustSeg(clusters=num_clusts, plot_clusts=plot_clusts, plot_sil=plot_sil)
 	cust_table = cs.fit_transform(df_public)
 	return cust_table
 
@@ -46,7 +53,6 @@ def run_pred_model(df, non_feature_cols, cust_table, model, params, rmse_plot=Fa
 	if rmse_plot:
 		pred_col_mask = (X_train_ss.dtypes == int) | (X_train_ss.dtypes == np.float64) | (X_train_ss.dtypes == np.uint8)
 		pred_cols = X_train_ss.columns[pred_col_mask]
-		print(pred_cols)
 		cluster_rmse, naive_rmse = model_clusters(fitted_models, X_test=X_test_ss, X_test_ns=X_test, naive_col='shrink_value_per_day_lag1_by_cat', col_mask=pred_cols, y_test=y_test)
 		plot_rmse(cluster_rmse, naive_rmse, num_clusters=len(X.cluster.unique()), 
           title='Predicting Next Visit Shrink Value')
@@ -62,7 +68,7 @@ def run_forc_model(df, non_feature_cols, cust_table, model, params, rmse_plot=Fa
 	pub = PublicData(include_crime=False, remove_nan_rows=True)
 	df_public = pub.fit_transform(df_lag)
 
-	split_date = pd.to_datetime('12/15/2017')
+	split_date = pd.to_datetime('12/1/2017')
 	spl = Split(non_feature_cols, target_col='shrink_value_per_day', split_by_time=True, date_col='visit_date', split_date=split_date)
 	spl.fit(df_public, cust_table)
 	X, y, X_train, X_test, y_train, y_test = spl.transform(df_public, cust_table)
@@ -88,18 +94,41 @@ def run_forc_model(df, non_feature_cols, cust_table, model, params, rmse_plot=Fa
 	return fc.forcast(cust_table)
 
 if __name__ == '__main__':
+	print('Reading and cleaning data...')
 	df = pd.read_pickle('../data/SRP/raw_subset_300k.pkl')
 	dc = DataClean(remove_nan_rows=True)
 	df = dc.fit_transform(df)
 	
-	cust_table = run_cust_seg(df)
+	try:
+		cust_table = pd.read_pickle('../data/SRP/cust_table_out.pkl')
+	except:
+		cust_table = run_cust_seg(df, num_clusts=4, plot_clusts=True, plot_sil=False)
 	print(cust_table.groupby('cluster').mean())
 
 	non_feature_cols = ['shrink_value', 'shrink_to_sales_value_pct', 'shrink_value_out', 'shrink_to_sales_value_pct_out', 'shrink_value_ex_del', 'shrink_to_sales_value_pct_ex_del', 'qty_inv_out', 'qty_shrink', 'qty_shrink_ex_del', 'qty_shrink_out', 'qty_end_inventory', 'qty_f', 'qty_out', 'qty_ex_del', 'qty_n', 'qty_delivery', 'qty_o', 'qty_d', 'qty_shrink_per_day', 'shrink_value_per_day']
-	model = MLPRegressor()
-	params = {'hidden_layer_sizes': [(300,), (100,), (50,50), (50,50,50)], 'learning_rate_init': [0.01, 0.001, 0.0001], 'activation': ['identity', 'logistic', 'tanh', 'relu'], 'solver': ['adam'],  'max_iter': [200]}
-	params_basic = {'hidden_layer_sizes': [(10)], 'learning_rate_init': [0.01], 
-          'activation': ['relu'], 'solver': ['adam'],  'max_iter': [10]}
+	use_MLP=True
+	if use_MLP:
+		model = MLPRegressor()
+		params = {'alpha': [0.0001, 0.001, 0.01, 1], 'hidden_layer_sizes': [(300,), (100,), (50,50), (50,50,50)], 'learning_rate_init': [0.01, 0.001, 0.0001], 'activation': ['identity', 'logistic', 'tanh', 'relu'], 'solver': ['adam'],  'max_iter': [3000]}
+		params_basic = {'hidden_layer_sizes': [(100,)], 'learning_rate_init': [0.001], 
+	          'activation': ['relu'], 'solver': ['adam'],  'max_iter': [100]}
+	else:
+		model = RandomForestRegressor()
+		params = {'n_estimators': [20, 100, 300], 'max_features': [3, 6, 9, 12, 15], 'max_depth': [None, 10, 30], 'min_samples_leaf': [1, 5, 10], 'max_leaf_nodes': [None, 20, 100],  'n_jobs': [-1]}
+		params_basic = {'n_estimators': [10], 'n_jobs': [-1]}
 
-	pm = run_pred_model(df, non_feature_cols, cust_table, model, params, rmse_plot=True)
+	#pm = run_pred_model(df, non_feature_cols, cust_table, model, params_basic, rmse_plot=True)
+
+	# opt_params: cluster:  1
+	# {'activation': 'identity', 'alpha': 0.001, 'hidden_layer_sizes': (300,), 'learning_rate_init': 0.0001, 'max_iter': 3000, 'solver': 'adam'}
+
+	# cluster:  2
+	# {'activation': 'tanh', 'alpha': 0.0001, 'hidden_layer_sizes': (100,), 'learning_rate_init': 0.0001, 'max_iter': 3000, 'solver': 'adam'}
+
+	# cluster:  3
+	# {'activation': 'relu', 'alpha': 0.0001, 'hidden_layer_sizes': (300,), 'learning_rate_init': 0.0001, 'max_iter': 3000, 'solver': 'adam'}
+
+	# cluster:  4
+	# {'activation': 'logistic', 'alpha': 0.0001, 'hidden_layer_sizes': (50, 50, 50), 'learning_rate_init': 0.01, 'max_iter': 3000, 'solver': 'adam'}
+
 	cust_table_agg = run_forc_model(df, non_feature_cols, cust_table, model, params, rmse_plot=True)
