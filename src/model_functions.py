@@ -32,7 +32,9 @@ def avg_dec(cluster_rmse, naive_rmse):
     for i in range(0, len(cluster_rmse)):
         if (naive_rmse[i] == 0) & (cluster_rmse[i] == 0):
             continue
-        avg_dec.append((naive_rmse[i] - cluster_rmse[i]) / naive_rmse[i])
+        dec = (naive_rmse[i] - cluster_rmse[i]) / naive_rmse[i]
+        avg_dec.append(dec)
+        print('Cluster {} decrease: {}'.format(i, round(dec, 3) * 100))
     return np.mean(avg_dec)
 
 def plot_rmse(cluster_rmse, naive_rmse, num_clusters, title='Root-Mean-Square Error'):
@@ -46,9 +48,9 @@ def plot_rmse(cluster_rmse, naive_rmse, num_clusters, title='Root-Mean-Square Er
     ax.set_xlabel('Cluster #')
     ax.set_ylabel('Root-Mean-Square Error ($/day/item)')
     ax.set_title(title)
-    ax.grid(alpha=0.4)
+    ax.grid(alpha=0.3)
     ax.legend()
-    print('Average decrease: {}%'.format(round(avg_dec(cluster_rmse, naive_rmse), 3) * 100))
+    print('Average overall decrease: {}%'.format(round(avg_dec(cluster_rmse, naive_rmse), 3) * 100))
     plt.savefig('../images/{}.png'.format(title.replace(" ", "")))
     #plt.show()
 
@@ -79,16 +81,18 @@ def class_crossval_plot(X, y, models, scoring='neg_mean_absolute_error'):
         names.append(name)
         print('{}: {:.2f} ({:2f})'.format(name, cv_results.mean(), cv_results.std()))
 
-    fig = plt.figure(figsize=(25, 18))
+    fig = plt.figure(figsize=(16, 10))
     plt.tight_layout()
-    fig.suptitle('Algorithm Comparison of CrossVal Scores')
+    fig.suptitle('Cross Validation Comparison of Regression Models')
     ax = fig.add_subplot(111)
     sb.violinplot(data=results, orient='v')
-    ax.set_xticklabels(names, rotation=45, ha='right')
-    ax.set_ylabel('K-Fold CV Negative Mean Abs. Error')
+    ax.set_xticklabels(names, rotation=50, ha='right')
+    #ax.set_ylabel('K-Fold CV Negative Mean Abs. Error')
+    #ax.set_yticks([])
     ax.set_xlabel('Model')
     plt.grid(alpha=0.4)
     plt.savefig('../images/model_selection.png')
+    #plt.show()
 
 def _split_and_plot(rmse_dict):
     num_clusts = len(rmse_dict['0']['pred'])

@@ -11,30 +11,52 @@ class PredModel(BaseEstimator, TransformerMixin):
     A generic class
     """
 
-    def __init__(self, model, param_grid):
+    def __init__(self, grid_search=True, model=None, param_grid=None, user_model_list=None):
         """
         Constructor
         """
+        if grid_search & (param_grid == None):
+            print('Param Grid must be passed if grid_search=True')
+        elif grid_search & (model == None):
+            print('Model must be passed if grid_search=True')
+            return()
+        elif (not grid_search) & (user_model_list == None):
+            print('List of models to fit must be passed if grid_search=False')
+            return
         self.model = model
+        self.grid_search = grid_search
         self.param_grid = param_grid
+        self.user_model_list = user_model_list
 
     def grid(self):
         self.best_params_list = clust_grid(self.model, self.param_grid, self.X, self.y, self.model_mask_cols)
 
     def create_models(self):
-        self.model_list = []
+        grid_model_list = []
         for i in range(0, len(self.X.cluster.unique())):
             foo_model = self.model
             foo_model.set_params(**self.best_params_list[i])
-            self.model_list.append(foo_model)
+            grid_model_list.append(foo_model)
+        return grid_model_list
 
     def fit(self, X, y):
         self.X = X
         self.y = y
         numb_no_time_mask = (self.X.dtypes == int) | (self.X.dtypes == np.float64) | (self.X.dtypes == np.uint8)
         self.model_mask_cols = self.X.columns[numb_no_time_mask]
-        self.grid()
-        self.create_models()
+
+        if self.grid_search:
+            # grid search over params to determine best model for each cluster
+            self.grid()
+            self.model_list = self.create_models()
+        else:
+            if len(self.X.cluster.unique()) != len(self.user_model_list):
+                print('Number of models does not match number of clusters')
+                return()
+            else:
+                # use user defined params for cluster models
+                self.model_list = self.user_model_list
+
         for index, model in enumerate(self.model_list):
             fit_clust_mask = self.X.cluster == str(index)
             model.fit(self.X[ self.model_mask_cols ][fit_clust_mask], self.y[fit_clust_mask])
