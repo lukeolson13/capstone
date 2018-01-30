@@ -82,8 +82,8 @@ From here, Random Forests, Gradient Boosting, and Multilayer Perceptron were fur
 
 ### Per Item Prediction ###
 
-For the item prediction model, the goal was to be able to predict what an item's shrink value would be prior to a salesman entering the store. To do this, all item level features were combined with store level features and public data. These features were then used to fit the multilayer perceptron model, one for each cluster.
-These predictions were then compared against the actual values, and a Root-Mean-Square-Error (RMSE) calculated. This was compared against the naive RMSE, which assumed that the amount of shrink value for a particular item at a specific location would be the same as it was on the previous value. The two are compared below:
+For the item prediction model, the goal was to be able to predict what an item's shrink would be prior to a salesman entering the store. To do this, all item level features were combined with store level features and public data. These features were then used to fit the multilayer perceptron model, one per cluster.
+These predictions were then compared against the actual values, and a Root-Mean-Square Error (RMSE) was calculated. This was compared against the naive RMSE, which assumed that the amount of shrink for a particular item at a specific location would be the same as it was on the previous visit. The two are compared below:
 
 <p align="center">
 <img src="/images/pred_model_result.png" width="60%">
@@ -93,7 +93,7 @@ These predictions were then compared against the actual values, and a Root-Mean-
 <img src="/images/clust_color_map.png" width="30%">
 </p>
 
-As you can see, the new model lowered the RMSE of each cluster, resulting in an overall 42% reduction in RMSE. The first cluster was a bit more difficult to model due to high variance in the shrink values.
+As you can see, the new model lowered the RMSE of each cluster, resulting in an overall 27% reduction in RMSE.
 
 ### Store Forecasting ###
 
