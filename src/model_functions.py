@@ -37,7 +37,7 @@ def avg_dec(cluster_rmse, naive_rmse):
         print('Cluster {} decrease: {}'.format(i, round(dec, 3) * 100))
     return np.mean(avg_dec)
 
-def plot_rmse(cluster_rmse, naive_rmse, num_clusters, title='Root-Mean-Square Error'):
+def plot_rmse(cluster_rmse, naive_rmse, num_clusters, yaxis_units='$/day/item', title='Root-Mean-Square Error'):
     fig = plt.figure(figsize=(6,6))
     ax = fig.add_subplot(1,1,1)
     clusters = np.arange(0, num_clusters)
@@ -46,7 +46,7 @@ def plot_rmse(cluster_rmse, naive_rmse, num_clusters, title='Root-Mean-Square Er
     ax.set_xticks(clusters)
     ax.set_xticklabels(clusters)
     ax.set_xlabel('Cluster #')
-    ax.set_ylabel('Root-Mean-Square Error ($/day/item)')
+    ax.set_ylabel('Root-Mean-Square Error ({})'.format(yaxis_units))
     ax.set_title(title)
     ax.grid(alpha=0.3)
     ax.legend()
@@ -58,7 +58,7 @@ def clust_grid(model, params, X_train, y_train, mask_cols):
     best_params_list = []
     for clust in range(0, len(X_train.cluster.unique())):
         print()
-        print('cluster: ', clust + 1)
+        print('cluster: ', clust)
         test_model = model
         train_clust_mask = X_train.cluster == str(clust)
         grid = GridSearchCV(test_model, param_grid=params, verbose=0)
@@ -103,7 +103,7 @@ def _split_and_plot(rmse_dict):
                     naive_rmse[int(clust)] = np.mean(rmse_dict[i][kind][clust])
         plot_rmse(cluster_rmse, naive_rmse, num_clusts, title='{} Time Period(s) Forward'.format(int(i) + 1))
 
-def forc_model_test(X_test, y_test, test_cluster_models, col_mask):
+def forc_model_test(X_test, y_test, test_cluster_models, col_mask, max_periods=10):
     rmse_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: [])))
     lag1_loc = X_test[col_mask].columns.get_loc('shrink_value_per_day_lag1_by_store')
     lag2_loc = X_test[col_mask].columns.get_loc('shrink_value_per_day_lag2_by_store')
@@ -135,6 +135,8 @@ def forc_model_test(X_test, y_test, test_cluster_models, col_mask):
             lag1_val = pred
                                 
             i += 1
+            if i >= max_periods:
+                break
     _split_and_plot(rmse_dict)
 
 def pred_shrink_value(cust_table, start_date, end_date, num_periods):

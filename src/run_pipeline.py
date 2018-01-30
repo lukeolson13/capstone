@@ -64,39 +64,45 @@ def run_pred_model(df, non_feature_cols, cust_table, grid_search=True, model=Non
           title='Predicting Next Visit Shrink Value')
 	return pm, X_train_ss, y_train
 
-def run_forc_model(df, non_feature_cols, cust_table, model, params, rmse_plot=False):
+def run_forc_model(df, non_feature_cols, cust_table, grid_search=True, model=None, param_grid=None, user_model_list=None, rmse_plot=True):
 	print('Running Forecast Model...')
+	print('Creating lag variables...')
 	cl = CreateLag(lag_periods=2, col_filters=['address1'], 
                    date_col='visit_date', lag_vars=['qty_shrink_per_day', 'shrink_value_per_day'], 
                    col_name_suf='_by_store', remove_nan_rows=True)
 	df_lag = cl.fit_transform(df)
 
+	print('Adding public data...')
 	pub = PublicData(include_crime=False, remove_nan_rows=True)
 	df_public = pub.fit_transform(df_lag)
 
+	print('Splitting...')
 	split_date = pd.to_datetime('12/1/2017')
 	spl = Split(non_feature_cols, target_col='shrink_value_per_day', split_by_time=True, date_col='visit_date', split_date=split_date)
 	spl.fit(df_public, cust_table)
 	X, y, X_train, X_test, y_train, y_test = spl.transform(df_public, cust_table)
 
+	print('Standardizing...')
 	ss = StdScale(std=True, scale=True)
 	X_ss = ss.fit_transform(X)
 	X_train_ss = ss.fit_transform(X_train)
 	X_test_ss = ss.fit_transform(X_test)
 
+	print('Fitting model...')
 	forc_cols = ['FD_ratio', 'LAPOP1_10', 'POP2010', 'dens_sq_mile', 'unemp_rate', 'qty_POG_limit', 'unit_price', 'shrink_value_per_day_lag1_by_store', 'shrink_value_per_day_lag2_by_store' ]
 	for col in X_ss.columns:
 	    if 'customer_id' in col:
 	        forc_cols.append(col)
-	fc = Forecast(model, params, forc_cols, num_periods=4)
+	fc = Forecast(forc_cols, grid_search=grid_search, model=model, param_grid=param_grid, user_model_list=user_model_list, num_periods=4)
 	fitted_models = fc.fit(X_ss, y)
 	if rmse_plot:
+		print('Plotting...')
 		# plot forecast against current training data
 		cluster_rmse, naive_rmse = model_clusters(fitted_models, X_test=X_test_ss, X_test_ns=X_test, naive_col='shrink_value_per_day_lag1_by_store', col_mask=forc_cols, y_test=y_test)
 		plot_rmse(cluster_rmse, naive_rmse, num_clusters=len(X.cluster.unique()), 
           title='Training Forecast')
 		# plot forecast against future data
-		forc_model_test(X_test, y_test, fitted_models, col_mask=forc_cols)
+		forc_model_test(X_test, y_test, fitted_models, col_mask=forc_cols, max_periods=10)
 	return fc.forecast(cust_table)
 
 if __name__ == '__main__':
@@ -106,7 +112,7 @@ if __name__ == '__main__':
 	df = dc.fit_transform(df)
 	
 	# customer table and segmentation
-	load_table = False
+	load_table = True
 	if load_table:
 		try:
 			cust_table = pd.read_pickle('../data/SRP/cust_table_out.pkl')
@@ -117,7 +123,7 @@ if __name__ == '__main__':
 	print(cust_table.groupby('cluster').mean())
 
 	# build models
-	non_feature_cols = ['shrink_value', 'shrink_to_sales_value_pct', 'shrink_value_out', 'shrink_to_sales_value_pct_out', 'shrink_value_ex_del', 'shrink_to_sales_value_pct_ex_del', 'qty_inv_out', 'qty_shrink', 'qty_shrink_ex_del', 'qty_shrink_out', 'qty_end_inventory', 'qty_f', 'qty_out', 'qty_ex_del', 'qty_n', 'qty_delivery', 'qty_o', 'qty_d', 'qty_shrink_per_day', 'shrink_value_per_day']
+	non_feature_cols = ['shrink_value', 'shrink_to_sales_value_pct', 'shrink_value_out', 'shrink_to_sales_value_pct_out', 'shrink_value_ex_del', 'shrink_to_sales_value_pct_ex_del', 'qty_inv_out', 'qty_shrink', 'qty_shrink_ex_del', 'qty_shrink_out', 'qty_end_inventory', 'qty_f', 'qty_out', 'qty_ex_del', 'qty_n', 'qty_delivery', 'qty_o', 'qty_d', 'qty_shrink_per_day', 'shrink_value_per_day', 'qty_start_inventory']
 	use_MLP=True
 	if use_MLP:
 		model = MLPRegressor()
@@ -130,19 +136,7 @@ if __name__ == '__main__':
 		params_basic = {'n_estimators': [10], 'n_jobs': [-1]}
 
 	# daily prediction model
-	pm, X_train_ss, y_train = run_pred_model(df, non_feature_cols, cust_table, grid_search=True, model=model, param_grid=params, user_model_list=None, rmse_plot=True)
-
-	# opt_params: cluster:  1
-	# {'activation': 'identity', 'alpha': 0.001, 'hidden_layer_sizes': (300,), 'learning_rate_init': 0.0001, 'max_iter': 3000, 'solver': 'adam'}
-
-	# cluster:  2
-	# {'activation': 'tanh', 'alpha': 0.0001, 'hidden_layer_sizes': (100,), 'learning_rate_init': 0.0001, 'max_iter': 3000, 'solver': 'adam'}
-
-	# cluster:  3
-	# {'activation': 'relu', 'alpha': 0.0001, 'hidden_layer_sizes': (300,), 'learning_rate_init': 0.0001, 'max_iter': 3000, 'solver': 'adam'}
-
-	# cluster:  4
-	# {'activation': 'logistic', 'alpha': 0.0001, 'hidden_layer_sizes': (50, 50, 50), 'learning_rate_init': 0.01, 'max_iter': 3000, 'solver': 'adam'}
+	#pm, X_train_ss, y_train = run_pred_model(df, non_feature_cols, cust_table, grid_search=True, model=model, param_grid=params, user_model_list=None, rmse_plot=True)
 
 	# forecast model
-	#cust_table_agg = run_forc_model(df, non_feature_cols, cust_table, model, params, rmse_plot=True)
+	cust_table_agg = run_forc_model(df, non_feature_cols, cust_table, grid_search=True, model=model, param_grid=params, user_model_list=None, rmse_plot=True)

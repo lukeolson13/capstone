@@ -8,16 +8,26 @@ __author__ = "Luke Olson"
 
 class Forecast(BaseEstimator, TransformerMixin):
     """
-    A generic class
+    Forecast shrink value for stores.
     """
 
-    def __init__(self, model, param_grid, model_mask_cols, num_periods=4):
+    def __init__(self, model_mask_cols, grid_search=True, model=None, param_grid=None, user_model_list=None, num_periods=4):
         """
         Constructor
         """
+        if grid_search & (param_grid == None):
+            print('Param Grid must be passed if grid_search=True')
+        elif grid_search & (model == None):
+            print('Model must be passed if grid_search=True')
+            return()
+        elif (not grid_search) & (user_model_list == None):
+            print('List of models to fit must be passed if grid_search=False')
+            return
+        self.model_mask_cols = model_mask_cols
+        self.grid_search = grid_search
         self.model = model
         self.param_grid = param_grid
-        self.model_mask_cols = model_mask_cols
+        self.user_model_list = user_model_list
         self.num_periods = num_periods
 
     def grid(self):
@@ -68,8 +78,17 @@ class Forecast(BaseEstimator, TransformerMixin):
     def fit(self, X, y):
         self.X = X
         self.y = y
-        self.grid()
-        self._create_models()
+        if self.grid_search:
+            # grid search over params to determine best model for each cluster
+            self.grid()
+            self.model_list = self._create_models()
+        else:
+            if len(self.X.cluster.unique()) != len(self.user_model_list):
+                print('Number of models does not match number of clusters')
+                return()
+            else:
+                # use user defined params for cluster models
+                self.model_list = self.user_model_list
         for index, model in enumerate(self.model_list):
             fit_clust_mask = self.X.cluster == str(index)
             model.fit(self.X[ self.model_mask_cols ][fit_clust_mask], self.y[fit_clust_mask])

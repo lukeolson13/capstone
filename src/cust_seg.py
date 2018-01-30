@@ -17,7 +17,7 @@ __author__ = "Luke Olson"
 
 class CustSeg(BaseEstimator, TransformerMixin):
     """
-    A generic class
+    Segment customers into distinct clusters.
     """
 
     def __init__(self, clusters=4, plot_clusts=False, plot_sil=False):

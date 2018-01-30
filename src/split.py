@@ -8,7 +8,7 @@ __author__ = "Luke Olson"
 
 class Split(BaseEstimator, TransformerMixin):
     """
-    A generic class
+    Break data into features and targets, and train/test split by time or randomly.
     """
 
     def __init__(self, non_feature_cols, target_col, split_by_time, date_col=None, split_date=None):

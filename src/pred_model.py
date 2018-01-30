@@ -8,7 +8,7 @@ __author__ = "Luke Olson"
 
 class PredModel(BaseEstimator, TransformerMixin):
     """
-    A generic class
+    Prediction model to estimate shrink on a visit by visit basis.
     """
 
     def __init__(self, grid_search=True, model=None, param_grid=None, user_model_list=None):

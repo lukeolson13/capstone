@@ -8,7 +8,7 @@ __author__ = "Luke Olson"
 
 class DataClean(BaseEstimator, TransformerMixin):
     """
-    A generic class
+    Clean data - create new columns, drop others, and get rid of nan values.
     """
 
     def __init__(self, remove_nan_rows=True):

@@ -7,7 +7,7 @@ __author__ = "Luke Olson"
 
 class StdScale(BaseEstimator, TransformerMixin):
     """
-    A generic class
+    Standardize and scale data.
     """
 
     def __init__(self, std=True, scale=True):

@@ -7,7 +7,7 @@ __author__ = "Luke Olson"
 
 class CreateLag(BaseEstimator, TransformerMixin):
     """
-    A generic class
+    Create lag columns to capture target variables at previous time points.
     """
 
     def __init__(self, lag_periods, col_filters, date_col, lag_vars, col_name_suf, remove_nan_rows=True):
