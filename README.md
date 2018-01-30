@@ -90,7 +90,7 @@ These predictions were then compared against the actual values, and a Root-Mean-
 </p>
 
 <p align="center">
-<img src="/images/clust_color_map.png" width="60%">
+<img src="/images/clust_color_map.png" width="30%">
 </p>
 
 As you can see, the new model lowered the RMSE of each cluster, resulting in an overall 42% reduction in RMSE. The first cluster was a bit more difficult to model due to high variance in the shrink values.
@@ -103,6 +103,10 @@ Running a similar test to the prediction model (just with the limited features),
 
 <p align="center">
 <img src="/images/TrainingForecast.png" width="60%">
+</p>
+
+<p align="center">
+<img src="/images/clust_color_map.png" width="30%">
 </p>
 
 This wasn't super surprising, given the limited amount of data.
