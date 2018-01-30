@@ -87,12 +87,8 @@ def class_crossval_plot(X, y, models, scoring='neg_mean_absolute_error'):
     ax = fig.add_subplot(111)
     sb.violinplot(data=results, orient='v')
     ax.set_xticklabels(names, rotation=50, ha='right')
-    #ax.set_ylabel('K-Fold CV Negative Mean Abs. Error')
-    #ax.set_yticks([])
     ax.set_xlabel('Model')
     plt.grid(alpha=0.4)
-    plt.savefig('../images/model_selection.png')
-    #plt.show()
 
 def _split_and_plot(rmse_dict):
     num_clusts = len(rmse_dict['0']['pred'])

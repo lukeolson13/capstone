@@ -6,7 +6,7 @@ from model_functions import clust_grid
 
 __author__ = "Luke Olson"
 
-class Forcast(BaseEstimator, TransformerMixin):
+class Forecast(BaseEstimator, TransformerMixin):
     """
     A generic class
     """
@@ -75,7 +75,7 @@ class Forcast(BaseEstimator, TransformerMixin):
             model.fit(self.X[ self.model_mask_cols ][fit_clust_mask], self.y[fit_clust_mask])
         return self.model_list
 
-    def forcast(self, cust_table):
+    def forecast(self, cust_table):
         self.cust_table = cust_table.copy()
         self.forc_model()
         return self.cust_table

@@ -6,7 +6,7 @@ from cust_seg import CustSeg
 from split import Split
 from std_scale import StdScale
 from pred_model import PredModel
-from forcast import Forcast
+from forecast import Forecast
 from sklearn.neural_network import MLPRegressor
 from sklearn.ensemble import RandomForestRegressor
 import warnings
@@ -65,7 +65,7 @@ def run_pred_model(df, non_feature_cols, cust_table, grid_search=True, model=Non
 	return pm, X_train_ss, y_train
 
 def run_forc_model(df, non_feature_cols, cust_table, model, params, rmse_plot=False):
-	print('Running Forcast Model...')
+	print('Running Forecast Model...')
 	cl = CreateLag(lag_periods=2, col_filters=['address1'], 
                    date_col='visit_date', lag_vars=['qty_shrink_per_day', 'shrink_value_per_day'], 
                    col_name_suf='_by_store', remove_nan_rows=True)
@@ -88,16 +88,16 @@ def run_forc_model(df, non_feature_cols, cust_table, model, params, rmse_plot=Fa
 	for col in X_ss.columns:
 	    if 'customer_id' in col:
 	        forc_cols.append(col)
-	fc = Forcast(model, params, forc_cols, num_periods=4)
+	fc = Forecast(model, params, forc_cols, num_periods=4)
 	fitted_models = fc.fit(X_ss, y)
 	if rmse_plot:
-		# plot forcast against current training data
+		# plot forecast against current training data
 		cluster_rmse, naive_rmse = model_clusters(fitted_models, X_test=X_test_ss, X_test_ns=X_test, naive_col='shrink_value_per_day_lag1_by_store', col_mask=forc_cols, y_test=y_test)
 		plot_rmse(cluster_rmse, naive_rmse, num_clusters=len(X.cluster.unique()), 
-          title='Training Forcast')
-		# plot forcast against future data
+          title='Training Forecast')
+		# plot forecast against future data
 		forc_model_test(X_test, y_test, fitted_models, col_mask=forc_cols)
-	return fc.forcast(cust_table)
+	return fc.forecast(cust_table)
 
 if __name__ == '__main__':
 	print('Reading and cleaning data...')

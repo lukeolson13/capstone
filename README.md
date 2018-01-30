@@ -14,27 +14,28 @@
 
 ## Background ##
 
-SRP distributes and owns merchandise in thousands of convenience stores across the nation. Since they don't actually sell the merchandise to the convenience store, and it is technically sold directly to the consumer, they keep a close eye on merchandise inventories in all of the stores that carry their items. One number they track religiously is the amount of shrink for their inventory. This number is the difference between the expected inventory of an item, and the actual inventory. Sometimes there are more items than expected, but often it is the other way around. Taking human error out of the equation, this 'loss' is typically associated with item theft. Since SRP takes the loss on these items (rather than the convenience store), they are interested in being able to predict the value of this shrink, as well as forecast this value for various regions of the US.
+SRP distributes and owns merchandise in thousands of convenience stores across the nation. Since they don't actually sell the merchandise to the convenience store, and it is technically sold directly to the consumer, they keep a close eye on merchandise inventories in all of the stores that carry their items. One number they track religiously is the amount of shrink for their inventory. This number is the difference between the expected inventory of an item, and the actual inventory. Sometimes there are more items than expected, but often it is the other way around. Taking accounting/human error out of the equation, this 'loss' is typically associated with item theft. Since SRP takes the loss on these items (rather than the convenience store), they are interested in being able to predict the value of this shrink, as well as forecast this value for each of their customers.
 
 ## Project Goal ##
 
 The goals of this project are as follows:
 1. Determine what factors influence shrink, and how these factors may be different across locations
-2. Predict shrink value on a visit by visit basis, essentially better preparing salesmen for site visits
+2. Predict shrink value on a visit by visit basis, better preparing salesmen for site visits
 3. Forecast shrink for each store
-4. Flag stores that appear to have much higher shrink compared with others in their area
 
 ## Methods ##
 1. Clean and engineer large dataset in order to model shrink value
 2. Pull in public data sources to better define store demographics
-3. Customer segmentation on a store by store basis
+3. Segment customers on a store by store basis
 4. Prediction of per item shrink value for each cluster
 5. Forecasting of shrink value per store for each cluster
 6. Flagging of various stores based on user-input shrink value thresholds to determine where to focus attention going forward
 
+<img src="/images/data_pipeline.png" width="70%">
+
 ### The Data ###
 
-The SRP data consists of ~4.6 million rows with 50 features each. Each row represents one visit by a salesmen to a single customer convenience store with regards to a single item. Features included customer demographic information, but were mostly specific to each item and visit, such as item price, qty, visit dates(s), inventory, etc.
+The SRP data consists of ~4.6 million rows with 50 features each. Each row represents one visit by a salesmen to a single customer convenience store with regards to a single item. Features included customer demographic information, but were mostly specific to each item and visit, such as item price, quantity, visit dates(s), inventory, etc.
 
 Public data that was considered includes:
    - Crime
@@ -44,7 +45,7 @@ Public data that was considered includes:
    - Food desert ratio
    
 Being public data, this was far from perfect. For example, the most specific location for one of the datasets was on a county level, whereas it would've been preferred to have everything on a zip-code level. 
-Another issue was with the crime data. This intuitively seems like an obvious indicator of convenience store theft. While there was decent correlation, the data was very sparse, and required throwing away ~1/3 of the SRP data available. Ultimately it was decided that cost outweighed benefit, and the crime data wasn't used in the analysis.
+Another issue was with the crime data. This intuitively seems like an obvious indicator of convenience store theft. While there was decent correlation, the data was very sparse, and required throwing away ~2/3 of the SRP data available. Ultimately it was decided that cost outweighed benefit, and the crime data wasn't used in the analysis.
 
 ### Customer Segmentation ###
 
@@ -55,26 +56,28 @@ In order to better model both predictions of item shrink value, as well as forec
 
 <img src="/images/Silhouette.png" width="70%">
 
-<img src="/images/Clusters.png" width="70%">
+<img src="/images/cluster.png" width="70%">
 
 The above image uses Principal Component Analysis to show weighted combinations of all features in 2-D space which explain the most variance. This is not necessarily the true distribution of clusters, but is merely a way to visualize the rough distribution of clusters.
 
+<img src="/images/map.png" width="70%">
+
 ### Model Selection ###
 
-Twelve non-tuned regression models were tested using K-Fold Cross Validation (three are not pictured):
+Twelve untuned regression models were tested using K-Fold Cross Validation (three are not pictured):
 
 <img src="/images/model_selection.png" width="100%">
 
-From here, Random Forests, Gradient Boosting, and Multilayer Perceptron were further tested (via GridSearchCV) in order to determine the optimal model for this dataset. Ultimately, Multilayer Perceptron was chosen.
+From here, Random Forests, Gradient Boosting, and Multilayer Perceptron were further tested (via GridSearchCV) in order to determine the optimal model for this dataset. Ultimately, Multilayer Perceptron was chosen (a vanilla neural net).
 
 ### Per Item Prediction ###
 
-For the item prediction model, the goal was to be able to predict what an item's shrink value would be prior to a salesman entering the store. To do this all item level features were combined with store level features and public data. These features were then used to fit the Multilayer Perceptron model, one for each cluster.
-These predictions were then compared against the actual values, and a Root-Mean-Square-Error (RMSE) calculated. This was compared against the naive RMSE, which was basically assuming the amount of shrink value for a particular item at a specific location would be the same as it was on the previous value. The two are compared below:
+For the item prediction model, the goal was to be able to predict what an item's shrink value would be prior to a salesman entering the store. To do this, all item level features were combined with store level features and public data. These features were then used to fit the multilayer perceptron model, one for each cluster.
+These predictions were then compared against the actual values, and a Root-Mean-Square-Error (RMSE) calculated. This was compared against the naive RMSE, which assumed that the amount of shrink value for a particular item at a specific location would be the same as it was on the previous value. The two are compared below:
 
-<img src="/images/pred_model_rmse.png" width="60%">
+<img src="/images/PredictingNextVisitShrinkValue.png" width="60%">
 
-As you can see, the new model significantly lowered the averaged RMSE (averaged across each of the cluster models).
+As you can see, the new model lowered the RMSE of each cluster, resulting in an overall 42% reduction in RMSE. The first cluster was a bit more difficult to model due to high variance in the shrink values.
 
 ### Store Forecasting ###
 
