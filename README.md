@@ -31,7 +31,9 @@ The goals of this project are as follows:
 5. Forecasting of shrink value per store for each cluster
 6. Flagging of various stores based on user-input shrink value thresholds to determine where to focus attention going forward
 
+<p align="center">
 <img src="/images/data_pipeline.png" width="70%">
+</p>
 
 ### The Data ###
 
@@ -54,19 +56,27 @@ In order to better model both predictions of item shrink value, as well as forec
    2. KMeans clustering was performed with varying number of clusters
    3. Silhouette scores were calculated, leading to the ideal amount of clusters (4)
 
+<p align="center">
 <img src="/images/Silhouette.png" width="70%">
+</p>
 
+<p align="center">
 <img src="/images/cluster.png" width="70%">
+</p>
 
 The above image uses Principal Component Analysis to show weighted combinations of all features in 2-D space which explain the most variance. This is not necessarily the true distribution of clusters, but is merely a way to visualize the rough distribution of clusters.
 
-<img src="/images/map.png" width="70%">
+<p align="center">
+<img src="/images/nyc.png" width="70%">
+</p>
 
 ### Model Selection ###
 
 Twelve untuned regression models were tested using K-Fold Cross Validation (three are not pictured):
 
+<p align="center">
 <img src="/images/model_selection.png" width="100%">
+</p>
 
 From here, Random Forests, Gradient Boosting, and Multilayer Perceptron were further tested (via GridSearchCV) in order to determine the optimal model for this dataset. Ultimately, Multilayer Perceptron was chosen (a vanilla neural net).
 
@@ -75,7 +85,13 @@ From here, Random Forests, Gradient Boosting, and Multilayer Perceptron were fur
 For the item prediction model, the goal was to be able to predict what an item's shrink value would be prior to a salesman entering the store. To do this, all item level features were combined with store level features and public data. These features were then used to fit the multilayer perceptron model, one for each cluster.
 These predictions were then compared against the actual values, and a Root-Mean-Square-Error (RMSE) calculated. This was compared against the naive RMSE, which assumed that the amount of shrink value for a particular item at a specific location would be the same as it was on the previous value. The two are compared below:
 
-<img src="/images/PredictingNextVisitShrinkValue.png" width="60%">
+<p align="center">
+<img src="/images/pred_model_result.png" width="60%">
+</p>
+
+<p align="center">
+<img src="/images/clust_color_map.png" width="60%">
+</p>
 
 As you can see, the new model lowered the RMSE of each cluster, resulting in an overall 42% reduction in RMSE. The first cluster was a bit more difficult to model due to high variance in the shrink values.
 
@@ -85,23 +101,15 @@ For the store level forecasting, many of the features used in the prediction mod
 
 Running a similar test to the prediction model (just with the limited features), the forecast model was about on par with predicting the next shrink value as the naive model: 
 
-<img src="/images/forc_model_test.png" width="60%">
+<p align="center">
+<img src="/images/TrainingForecast.png" width="60%">
+</p>
 
 This wasn't super surprising, given the limited amount of data.
 
-Next, future visit predictions were made, and an RMSE was again calculated off of the actual value (the test set was roughly the last month of data available) and compared to the naive approach (assuming the last visit shrink value, extrapolated into the future). Now, the forecast model was able to pick up better on trends within each store's shrink, and combine this with store demographics to come up with better predictions than the forecast model:
-
-<img src="/images/forc_model_rmse1.png" width="60%">
-
-<img src="/images/forc_model_rmse2.png" width="60%">
-
-<img src="/images/forc_model_rmse3.png" width="60%">
-
-*Note: there are blank values as the time visit periods go forward due to certain clusters of stores not having information.
+Next, future visit predictions were made, and an RMSE was again calculated off of the actual value (the test set was roughly the last month of data available) and compared to the naive approach (assuming the last visit shrink value, extrapolated into the future). Now, the forecast model was able to pick up better on trends within each store's shrink, and combine this with store demographics to come up with better predictions than the forecast model.
 
 ### Store Flag ###
-
-<img src="/images/flag.png" width="5%">
 
 Given the relative success of the forecasting model, a method for flagging certain customers was developed. This essentially predicts shrink value for customers X periods into the future, and then allows a user determine what time period to look at. Then, a total shrink value for that time period is created for each customer. The user can then give the method thresholds on dollar amounts or multiples of a minimum value, and customer stores that breach this threshold compared with other stores in the same zip-code are flagged as problematic.
 
