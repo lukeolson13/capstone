@@ -135,7 +135,7 @@ class CustSeg(BaseEstimator, TransformerMixin):
         plt.ylim(ymin=-9, ymax=12)
         plt.xlim(xmin=-15, xmax=15)
         plt.legend()
-        plt.savefig('../images/cluster.png')
+        plt.savefig('../images/cluster_new.png')
         #plt.show()
 
     def plot_ss(self, cust_table): 

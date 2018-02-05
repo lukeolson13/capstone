@@ -24,10 +24,10 @@ class PredModel(BaseEstimator, TransformerMixin):
             print('Param Grid must be passed if grid_search=True')
         elif grid_search & (model == None):
             print('Model must be passed if grid_search=True')
-            return()
+            return None
         elif (not grid_search) & (user_model_list == None):
             print('List of models to fit must be passed if grid_search=False')
-            return
+            return None
         self.model = model
         self.grid_search = grid_search
         self.param_grid = param_grid

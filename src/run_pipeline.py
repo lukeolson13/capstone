@@ -152,39 +152,49 @@ def run_forc_model(df, non_feature_cols, cust_table, grid_search=True, model=Non
 	return fc.forecast(cust_table)
 
 if __name__ == '__main__':
+	# review most important user input fields
+	df_file = '../data/SRP/raw_subset_20k.pkl'
+	load_table = True
+	use_MLP=True
+	use_basic_params = True
+
+	# read and clean data
 	print('Reading and cleaning data...')
-	df = pd.read_pickle('../data/SRP/raw_subset_300k.pkl')
+	df = pd.read_pickle(df_file)
 	dc = DataClean(remove_nan_rows=True)
 	df = dc.fit_transform(df)
 	
 	# customer table and segmentation
-	load_table = True
 	if load_table:
 		# use previous determined customer clusters
 		try:
 			cust_table = pd.read_pickle('../data/SRP/cust_table_out.pkl')
 		except:
-			cust_table = run_cust_seg(df, num_clusts=4, plot_clusts=True, plot_sil=False)
+			cust_table = run_cust_seg(df, num_clusts=4, plot_clusts=False, plot_sil=False)
 	else:
 		# create new customer clusters
-		cust_table = run_cust_seg(df, num_clusts=4, plot_clusts=True, plot_sil=False)
+		cust_table = run_cust_seg(df, num_clusts=4, plot_clusts=False, plot_sil=False)
 	# view average values for clusters to get an idea of how they were clustered
 	print(cust_table.groupby('cluster').mean())
 
 	# build models
 	non_feature_cols = ['shrink_value', 'shrink_to_sales_value_pct', 'shrink_value_out', 'shrink_to_sales_value_pct_out', 'shrink_value_ex_del', 'shrink_to_sales_value_pct_ex_del', 'qty_inv_out', 'qty_shrink', 'qty_shrink_ex_del', 'qty_shrink_out', 'qty_end_inventory', 'qty_f', 'qty_out', 'qty_ex_del', 'qty_n', 'qty_delivery', 'qty_o', 'qty_d', 'qty_shrink_per_day', 'shrink_value_per_day', 'qty_start_inventory']
-	use_MLP=True
 	if use_MLP:
 		# use multilayer perceptron
 		model = MLPRegressor()
-		params = {'alpha': [0.0001, 0.001, 0.01, 1], 'hidden_layer_sizes': [(300,), (100,), (50,50), (50,50,50)], 'learning_rate_init': [0.01, 0.001, 0.0001], 'activation': ['identity', 'logistic', 'tanh', 'relu'], 'solver': ['adam'],  'max_iter': [3000]}
+		params_grid = {'alpha': [0.0001, 0.001, 0.01, 1], 'hidden_layer_sizes': [(300,), (100,), (50,50), (50,50,50)], 'learning_rate_init': [0.01, 0.001, 0.0001], 'activation': ['identity', 'logistic', 'tanh', 'relu'], 'solver': ['adam'],  'max_iter': [3000]}
 		params_basic = {'hidden_layer_sizes': [(100,)], 'learning_rate_init': [0.001], 
 	          'activation': ['relu'], 'solver': ['adam'],  'max_iter': [100]}
 	else:
 		# use a random forest
 		model = RandomForestRegressor()
-		params = {'n_estimators': [20, 100, 300], 'max_features': [3, 6, 9, 12, 15], 'max_depth': [None, 10, 30], 'min_samples_leaf': [1, 5, 10], 'max_leaf_nodes': [None, 20, 100],  'n_jobs': [-1]}
+		params_grid = {'n_estimators': [20, 100, 300], 'max_features': [3, 6, 9, 12, 15], 'max_depth': [None, 10, 30], 'min_samples_leaf': [1, 5, 10], 'max_leaf_nodes': [None, 20, 100],  'n_jobs': [-1]}
 		params_basic = {'n_estimators': [10], 'n_jobs': [-1]}
+
+	if use_basic_params:
+		params = params_basic
+	else:
+		params = params_grid
 
 	# daily prediction model
 	pm = run_pred_model(df, non_feature_cols, cust_table, grid_search=True, model=model, param_grid=params, user_model_list=None, rmse_plot=True)

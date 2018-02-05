@@ -102,7 +102,7 @@ For the store level forecasting, many of the features used in the prediction mod
 Running a similar test to the prediction model (just with the limited features), the forecast model was about on par with predicting the next shrink value as the naive model: 
 
 <p align="center">
-<img src="/images/TrainingForecast.png" width="60%">
+<img src="/images/Training_Forecast.png" width="60%">
 </p>
 
 <p align="center">
