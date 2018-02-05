@@ -120,6 +120,7 @@ Given the relative success of the forecasting model, a method for flagging certa
 ### Future Directions ###
 
 Given the short timespan of this project (two weeks), there's definitely more work to do. Some future work might include:
+   - Considering the bias the algorithm may create by segmenting customers by specific demographics, such as race
    - Further tuning of the lag column algorithm
    - Impute the public data to fill some of the nans or look for more different sources that don't result in missing values
    - Further model tuning: Multilayer Perceptron wasn't chosen because neural nets are the talk of the town, but because it performed the  best. The hyperparameters used were spit out by the GridSearchCV, so there is probably room for improvement looking at this from a model architecture standpoint
