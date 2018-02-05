@@ -13,7 +13,14 @@ class Forecast(BaseEstimator, TransformerMixin):
 
     def __init__(self, model_mask_cols, grid_search=True, model=None, param_grid=None, user_model_list=None, num_periods=4):
         """
-        Constructor
+        Initializer
+        Inputs:
+            model_mask_cols - features columns to be used in forecast
+            grid_seach - whether or not to grid search the best model parameters. If false, user_model_list must not be None
+            model - model to be used in grid search. If None, user_model_list must not be None
+            param_grid - parameter grid to be used in grid search. If None, user_model_list must not be None
+            user_model_list - pre-determined (unfitted) models to be used. If None, grid_search, model, and param_grid must all contain values
+            num_periods - number of periods forward to forecast shrink value
         """
         if grid_search & (param_grid == None):
             print('Param Grid must be passed if grid_search=True')
@@ -31,9 +38,15 @@ class Forecast(BaseEstimator, TransformerMixin):
         self.num_periods = num_periods
 
     def grid(self):
+        """
+        Determines best model parameters from grid search
+        """
         self.best_params_list = clust_grid(self.model, self.param_grid, self.X, self.y, self.model_mask_cols)
 
     def _create_models(self):
+        """
+        Creates models from best model parameters determined by grid search
+        """
         self.model_list = []
         for i in range(0, len(self.X.cluster.unique())):
             foo_model = self.model
@@ -41,6 +54,13 @@ class Forecast(BaseEstimator, TransformerMixin):
             self.model_list.append(foo_model)
 
     def _update_cust_table(self, add, i, pred):
+        """
+        Update customer table with forecast values and other needed values
+        Inputs:
+            add - column for customer address (address1)
+            i - time period
+            pred - forecast shrink value prediction
+        """
         self.cust_table.set_value(add, 'period{}_forc_shrink_value_per_day_per_item'.format(i), pred)
         days_i = self.cust_table.columns.get_loc('days_between_visits')
         days = self.cust_table.loc[add][days_i]
@@ -50,6 +70,9 @@ class Forecast(BaseEstimator, TransformerMixin):
         self.cust_table.set_value(add, 'period{}_pred_date'.format(i), next_visit)
 
     def forc_model(self):
+        """
+        Forecast value of shrink for a time period for a specific store
+        """
         lag1_loc = self.X[self.model_mask_cols].columns.get_loc('shrink_value_per_day_lag1_by_store')
         lag2_loc = self.X[self.model_mask_cols].columns.get_loc('shrink_value_per_day_lag2_by_store')
         for add in self.X.address1.unique():
@@ -76,6 +99,14 @@ class Forecast(BaseEstimator, TransformerMixin):
                 lag1_val = pred
 
     def fit(self, X, y):
+        """
+        Fits forecast models
+        Inputs:
+            X - features to use in fitting models
+            y - targets to use in scoreing models
+        Returns:
+            list of fitted models
+        """
         self.X = X
         self.y = y
         if self.grid_search:
@@ -95,6 +126,13 @@ class Forecast(BaseEstimator, TransformerMixin):
         return self.model_list
 
     def forecast(self, cust_table):
+        """
+        Forecasts shrink value
+        Inputs:
+            cust_table - customer table
+        Returns:
+            update customer table with new forecasted shrink values
+        """
         self.cust_table = cust_table.copy()
         self.forc_model()
         return self.cust_table

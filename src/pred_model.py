@@ -13,7 +13,12 @@ class PredModel(BaseEstimator, TransformerMixin):
 
     def __init__(self, grid_search=True, model=None, param_grid=None, user_model_list=None):
         """
-        Constructor
+        Initializer
+        Inputs:
+            grid_seach - whether or not to grid search the best model parameters. If false, user_model_list must not be None
+            model - model to be used in grid search. If None, user_model_list must not be None
+            param_grid - parameter grid to be used in grid search. If None, user_model_list must not be None
+            user_model_list - pre-determined (unfitted) models to be used. If None, grid_search, model, and param_grid must all contain values
         """
         if grid_search & (param_grid == None):
             print('Param Grid must be passed if grid_search=True')
@@ -29,9 +34,15 @@ class PredModel(BaseEstimator, TransformerMixin):
         self.user_model_list = user_model_list
 
     def grid(self):
+        """
+        Determines best model parameters from grid search
+        """
         self.best_params_list = clust_grid(self.model, self.param_grid, self.X, self.y, self.model_mask_cols)
 
     def create_models(self):
+        """
+        Creates models from best model parameters determined by grid search
+        """
         grid_model_list = []
         for i in range(0, len(self.X.cluster.unique())):
             foo_model = self.model
@@ -40,6 +51,14 @@ class PredModel(BaseEstimator, TransformerMixin):
         return grid_model_list
 
     def fit(self, X, y):
+        """
+        Fits prediction models
+        Inputs:
+            X - features to use in fitting models
+            y - targets to use in scoreing models
+        Returns:
+            list of fitted models
+        """
         self.X = X
         self.y = y
         numb_no_time_mask = (self.X.dtypes == int) | (self.X.dtypes == np.float64) | (self.X.dtypes == np.uint8)
@@ -63,6 +82,13 @@ class PredModel(BaseEstimator, TransformerMixin):
         return self.model_list
 
     def predict(self, X_pred):
+        """
+        Predicts shrink for a given visit
+        Inputs:
+            X_pred - dataframe of features to be used in shrink prediction
+        Returns:
+            list of predicted values
+        """
         y_pred = [np.nan] * len(X_pred)
         for index, model in enumerate(self.model_list):
             pred_clust_mask = X_pred.cluster == str(index)

@@ -22,19 +22,37 @@ class CustSeg(BaseEstimator, TransformerMixin):
 
     def __init__(self, clusters=4, plot_clusts=False, plot_sil=False):
         """
-        Constructor
+        Initializer
+        Inputs:
+            clusters - number of customer clusters to create
+            plot_clusts - plot 2-D representation of clusters
+            plot_sil - plot silohouette score against varying number of clusters (can be used to determine number of clusters) 
         """
         self.clusters = clusters
         self.plot_clusts = plot_clusts
         self.plot_sil = plot_sil
 
     def _last_visit(self, row):
+        """
+        Determines the last salesmen visit to a particular customer
+        Input:
+            row - dataframe row to find value for (passed by apply function)
+        Returns:
+            Visit most previous to the one being passed in
+        """
         add = row.name
         foo = self.df[ self.df.address1 == add ].groupby(['address1', 'visit_date']).count()
         num_visits = len(foo)
         return foo.index[num_visits - 1][1]
 
     def _days_between_visits(self, row):
+        """
+        Determines the average number of days between salesmen visits
+        Input:
+            row - dataframe row to find value for (passed in by apply function)
+        Returns:
+            Average number of days between salesmen visits for store
+        """
         add = row.name
         foo = self.df[ self.df.address1 == add ].groupby(['address1', 'visit_date']).count()
         num_visits = len(foo)
@@ -43,6 +61,9 @@ class CustSeg(BaseEstimator, TransformerMixin):
         return (last_visit - first_visit).days / num_visits
 
     def _add_cols(self):
+        """
+        Adds a number of needed columns to the dataframe (Average specific items per visit, number of days between visits, last visit)
+        """
         # add in avg items (UPC) per visit
         foo = self.df.groupby(['address1', 'visit_date']).count()[['qty_shrink_per_day']]
         foo['avg_UPC_per_visit'] = foo['qty_shrink_per_day']
@@ -57,6 +78,9 @@ class CustSeg(BaseEstimator, TransformerMixin):
     
 
     def build_cust_table(self):
+        """
+        Creates a customer table given the input dataframe
+        """
         self.cust_table = self.df.groupby(['address1']).mean()[['qty_shrink_per_day', 'shrink_value_per_day', 'POP2010', 'FD_ratio', 'unemp_rate', 'dens_sq_mile', ]].reset_index()
         self.cust_table.set_index('address1', inplace=True)
 
@@ -71,11 +95,17 @@ class CustSeg(BaseEstimator, TransformerMixin):
         self._add_cols()
 
     def _std_cust_table(self):
+        """
+        Standardizes the data in the given customer table
+        """
         self.std_cust_table = self.cust_table.copy()
         ss = StdScale(std=True, scale=False)
         self.std_cust_table = ss.fit_transform(self.std_cust_table)
 
     def _cluster(self):
+        """
+        Performs kmeans clustering on customer table
+        """
         print('Clustering...')
         shrink_cust_mask = (self.cust_table.dtypes == float)
         self.shrink_cust_cols = list(self.cust_table.columns[ shrink_cust_mask ])
@@ -87,6 +117,11 @@ class CustSeg(BaseEstimator, TransformerMixin):
         self.cust_table['cluster'] = pred.astype(str)
 
     def plot_clust(self, cust_table):
+        """
+        Perform principal component analysis and plot first two principal components to give a visual representation of customer clustering
+        Input:
+            cust_table - customer table with newly appended cluster values
+        """
         cust_pca = PCA(2)
         pca = cust_pca.fit_transform(cust_table[self.shrink_cust_cols])
         
@@ -104,13 +139,26 @@ class CustSeg(BaseEstimator, TransformerMixin):
         #plt.show()
 
     def plot_ss(self, cust_table): 
+        """
+        Plot the silhouette score
+        """
         SSE_arr, ss_arr = kmeans(cust_table[self.shrink_cust_cols], clusters=np.arange(1, 13))
         silhouette_plot(ss_arr, clusters=np.arange(2, 13))
 
     def fit(self, df, y=None):
+        """
+        Placeholder fit method required by sklearn
+        """
         return self
 
     def transform(self, df):
+        """
+        Segment customers based on kmeans clustering
+        Input:
+            df - dataframe
+        Returns:
+            Customer table with cluster value for each store
+        """
         self.df = df.copy()
         self.build_cust_table()
         self._std_cust_table()

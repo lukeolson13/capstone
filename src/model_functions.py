@@ -11,6 +11,19 @@ rc('font', **font)
 plt.style.use('seaborn-dark-palette')
 
 def model_clusters(model_list, X_test, X_test_ns, naive_col, col_mask, y_test):
+    """
+    Predict values for current model. Obtain root-mean-squared error for both model and naive model.
+    Inputs:
+        model_list - list of fitted models to predict values for
+        X_test - scaled test features to use in prediction
+        X_test_ns - non-scaled test features; uses a lag column as the naive value
+        naive_col - dataframe lag column to use as last visit prediction
+        col_mask - features to use in prediction model
+        y_test - targets associated with test features to compare to predictions
+    Returns:
+        cluster_rmse - list of RMSE values, one for each input model
+        naive_rmse - list of RMSE values, one for each input model
+    """
     cluster_rmse = []
     naive_rmse = []
     for index, model in enumerate(model_list):
@@ -28,6 +41,14 @@ def model_clusters(model_list, X_test, X_test_ns, naive_col, col_mask, y_test):
     return cluster_rmse, naive_rmse
 
 def avg_dec(cluster_rmse, naive_rmse):
+    """
+    Determine average decrease between prediction RMSE and naive RMSE
+    Inputs:
+        cluster_rmse - list of RMSE values for prediction model
+        naive_rmse - list of RMSE values for naive model
+    Returns:
+        average overall decrease between models
+    """
     avg_dec = []
     for i in range(0, len(cluster_rmse)):
         if (naive_rmse[i] == 0) & (cluster_rmse[i] == 0):
@@ -37,7 +58,16 @@ def avg_dec(cluster_rmse, naive_rmse):
         print('Cluster {} decrease: {}'.format(i, round(dec, 3) * 100))
     return np.mean(avg_dec)
 
-def plot_rmse(cluster_rmse, naive_rmse, num_clusters, yaxis_units='$/day/item', title='Root-Mean-Square Error'):
+def plot_rmse(cluster_rmse, naive_rmse, yaxis_units='$/day/item', title='Root-Mean-Square Error'):
+    """
+    Visualize difference between prediction RMSE and naive RMSE
+    Inputs:
+        cluster_rmse - list of RMSE values for prediction model
+        naive_rmse - list of RMSE values for naive model
+        yaxis_units - units of y-axis
+        title - plot title
+    """
+    num_clusters = len(cluster_rmse)
     fig = plt.figure(figsize=(6,6))
     ax = fig.add_subplot(1,1,1)
     clusters = np.arange(0, num_clusters)
@@ -55,6 +85,17 @@ def plot_rmse(cluster_rmse, naive_rmse, num_clusters, yaxis_units='$/day/item', 
     #plt.show()
 
 def clust_grid(model, params, X_train, y_train, mask_cols):
+    """
+    Grid search over each cluster model
+    Inputs:
+        model - sklearn model to use (ie Lasso())
+        params - parameter grid to search over for each model
+        X_train - features to train model with
+        y_train - targets to validate model with
+        mask_cols - feature columns to use in model predictions
+    Returns:
+        list of the best parameters found by the grid search for each model
+    """
     best_params_list = []
     for clust in range(0, len(X_train.cluster.unique())):
         print()
@@ -69,6 +110,14 @@ def clust_grid(model, params, X_train, y_train, mask_cols):
     return best_params_list
 
 def class_crossval_plot(X, y, models, scoring='neg_mean_absolute_error'):
+    """
+    Create violin plot of multiple models' test scores
+    Inputs:
+        X - dataframe features
+        y - dataframe target column
+        models - list of sklearn models to test
+        scoring - measure of best fit for models to use
+    """
     results = []
     names = []
     all_scores = []
@@ -91,6 +140,11 @@ def class_crossval_plot(X, y, models, scoring='neg_mean_absolute_error'):
     plt.grid(alpha=0.4)
 
 def _split_and_plot(rmse_dict):
+    """
+    Plots results of forc_model_test
+    Inputs:
+        rmse_dict - dictionary of RMSE values passed by forc_model_test
+    """
     num_clusts = len(rmse_dict['0']['pred'])
     for i in rmse_dict.keys():
         cluster_rmse = [0] * num_clusts
@@ -104,6 +158,15 @@ def _split_and_plot(rmse_dict):
         plot_rmse(cluster_rmse, naive_rmse, num_clusts, title='{} Time Period(s) Forward'.format(int(i) + 1))
 
 def forc_model_test(X_test, y_test, test_cluster_models, col_mask, max_periods=10):
+    """
+    Uses predictions at each timestep to forecast shrink value forward in time, and compares with actual value
+    Inputs:
+        X_test - features to use in testing
+        y_test - testing targets
+        test_cluster_models - fitted cluster model to make predictions with
+        col_mask - feature columns to use in model
+        max_periods - number of time periods forward to forecast shrink value
+    """
     rmse_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: [])))
     lag1_loc = X_test[col_mask].columns.get_loc('shrink_value_per_day_lag1_by_store')
     lag2_loc = X_test[col_mask].columns.get_loc('shrink_value_per_day_lag2_by_store')
@@ -140,6 +203,16 @@ def forc_model_test(X_test, y_test, test_cluster_models, col_mask, max_periods=1
     _split_and_plot(rmse_dict)
 
 def pred_shrink_value(cust_table, start_date, end_date, num_periods):
+    """
+    Forecast shrink value between two dates for each store
+    Inputs:
+        cust_table - customer table with prediction forecast and associated predicted visit dates
+        start_date - forecast start date
+        end_date - forecast end date
+        num_periods - number of periods forward in time to consider shrink predictions
+    Returns:
+        updated customer table with new aggregate column, with single value per store
+    """
     out_table = cust_table.copy()
     
     start_date = pd.to_datetime(start_date)
@@ -164,6 +237,14 @@ def pred_shrink_value(cust_table, start_date, end_date, num_periods):
     return out_table
     
 def flag(cust_table, mult_over_min=4, amount_over_min=100, and_or='and'):
+    """
+    Flags stores (prints them) that are above a certain threshold in the same zip code as another store
+    Inputs:
+        cust_table - customer table from pred_shrink_value
+        mult_over_min - multiple over minimum shrink value for all stores in a region as threshold
+        amount_over_min - value over minimum shrink value for all stores in a region as threshold
+        and_or - whether both or only one threshold must be met in order to flag store
+    """
     foo = cust_table[ cust_table.agg_shrink_value > 0 ] \
         .groupby(['zip_code', 'address1']).sum()[['agg_shrink_value']].reset_index()
     loc_agg = foo.columns.get_loc('agg_shrink_value')
