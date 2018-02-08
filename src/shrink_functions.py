@@ -19,6 +19,28 @@ def X_y(df, non_feature_cols, target_col):
     y = non_feature_data[target_col]
     return X, y
 
+def time_split(df, date_col, split_date, non_feature_cols, target_col):
+    """
+    Splits dataframe by date into train/test sets
+    Inputs:
+        df - dataframe
+        date_col - visit date column
+        split_date - date to split dataframe on (all rows after this date will be test)
+        non_feature_cols - columns that are either targets or result in data leakage
+        target_col - target column
+    Returns:
+        X_train - training features
+        X_test - testing features
+        y_train - training targets
+        y_test - testing targets
+    """
+    df_train = df[ df[date_col] < split_date ]
+    df_test = df[ df[date_col] >= split_date ]
+    X_train, y_train = X_y(df_train, non_feature_cols, target_col)
+    X_test, y_test = X_y(df_test, non_feature_cols, target_col)
+
+    return X_train, X_test, y_train, y_test
+
 def std_f(X_std):
     """
     Standardizes data (centers column about 0, with a standard deviation of 1)

@@ -43,15 +43,16 @@ class Forecast(BaseEstimator, TransformerMixin):
         """
         self.best_params_list = clust_grid(self.model, self.param_grid, self.X, self.y, self.model_mask_cols)
 
-    def _create_models(self):
+    def create_models(self):
         """
         Creates models from best model parameters determined by grid search
         """
-        self.model_list = []
+        model_list = []
         for i in range(0, len(self.X.cluster.unique())):
             foo_model = self.model
             foo_model.set_params(**self.best_params_list[i])
-            self.model_list.append(foo_model)
+            model_list.append(foo_model)
+        return model_list
 
     def _update_cust_table(self, add, i, pred):
         """
@@ -112,7 +113,7 @@ class Forecast(BaseEstimator, TransformerMixin):
         if self.grid_search:
             # grid search over params to determine best model for each cluster
             self.grid()
-            self.model_list = self._create_models()
+            self.model_list = self.create_models()
         else:
             if len(self.X.cluster.unique()) != len(self.user_model_list):
                 print('Number of models does not match number of clusters')

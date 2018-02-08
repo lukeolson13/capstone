@@ -99,10 +99,10 @@ As you can see, the new model lowered the RMSE of each cluster, resulting in an 
 
 For the store level forecasting, many of the features used in the prediction model couldn't be used. This is because many of the values are determined on the most recent visit to the store. Obviously, these values aren't known about a store 3 months in advance. What this left was store level information (including the public data), and previous visit shrink value data (the lag columns; see [this Gist](https://gist.github.com/lukeolson13/8047b3ecd54f6d7a02bdc18b8e0212c0) on how this was done). 
 
-Running a similar test to the prediction model (just with the limited features), the forecast model was about on par with predicting the next shrink value as the naive model: 
+Running a similar test to the prediction model (just with the limited features), the forecast model was about on par (actually slightly worse) with predicting the next shrink value as the naive model: 
 
 <p align="center">
-<img src="/images/Training_Forecast.png" width="60%">
+<img src="/images/TrainingForecast.png" width="60%">
 </p>
 
 <p align="center">
@@ -111,11 +111,31 @@ Running a similar test to the prediction model (just with the limited features),
 
 This wasn't super surprising, given the limited amount of data.
 
-Next, future visit predictions were made, and an RMSE was again calculated off of the actual value (the test set was roughly the last month of data available) and compared to the naive approach (assuming the last visit shrink value, extrapolated into the future). Now, the forecast model was able to pick up better on trends within each store's shrink, and combine this with store demographics to come up with better predictions than the forecast model.
+Next, future visit predictions were made, and an RMSE was again calculated off of the actual value and compared to the naive approach (last visit shrink value extrapolated out). Now, it appears the forecast model was able to pick up better on trends within each store's shrink via the lag columns, and combine this with store demographics to come up with a more accurate forecast than the naive model:
+
+<p align="center">
+<img src="/images/1TimePeriod(s)Forward.png" width="60%">
+</p>
+
+<p align="center">
+<img src="/images/2TimePeriod(s)Forward.png" width="60%">
+</p>
+
+<p align="center">
+<img src="/images/3TimePeriod(s)Forward.png" width="60%">
+</p>
+
+<p align="center">
+<img src="/images/4TimePeriod(s)Forward.png" width="60%">
+</p>
+
+Here, a single "time period" refers to the next expected visit by a salesman to a store. This value averages 28 days/store, with a standard deviation of 16 days/store. In this case, the test set allowed for forecasting of 16 weeks (all 12 "time periods" across these 16 weeks can be seen in the "images" folder).
+
+On average, the forecast models were able to outperform the naive models by 41.5% (average drop in RMSE of 0.222 $/day/store). This equates to roughly $80,000 per month across all stores.
 
 ### Store Flag ###
 
-Given the relative success of the forecasting model, a method for flagging certain customers was developed. This essentially predicts shrink value for customers X periods into the future, and then allows a user determine what time period to look at. Then, a total shrink value for that time period is created for each customer. The user can then give the method thresholds on dollar amounts or multiples of a minimum value, and customer stores that breach this threshold compared with other stores in the same zip-code are flagged as problematic.
+Given the relative success of the forecasting model, a method for flagging certain customers was developed. This essentially predicts shrink value for all customers a set number of periods into the future, and then allows a user determine what time period to look at (ie all of May 2018). Then, a total shrink value for that time period is created for each customer. The user can then give the method thresholds on dollar amounts or multiples of a minimum value, and customer stores that breach this threshold compared with other stores in the same area are flagged as problematic.
 
 ### Future Directions ###
 
@@ -123,4 +143,4 @@ Given the short timespan of this project (two weeks), there's definitely more wo
    - Considering the bias the algorithm may create by segmenting customers by specific demographics, such as race
    - Further tuning of the lag column algorithm
    - Impute the public data to fill some of the nans or look for more different sources that don't result in missing values
-   - Further model tuning: Multilayer Perceptron wasn't chosen because neural nets are the talk of the town, but because it performed the  best. The hyperparameters used were spit out by the GridSearchCV, so there is probably room for improvement looking at this from a model architecture standpoint
+   - Further model tuning: Multilayer Perceptron wasn't chosen because neural nets are the talk of the town, but because it performed the  best. The hyperparameters used were determined by the GridSearchCV, so there is probably room for improvement by further tuning the grid search or looking at this from a model architecture standpoint (ie there should be X hidden layers of size Y because...)

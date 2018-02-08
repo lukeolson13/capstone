@@ -40,30 +40,51 @@ def model_clusters(model_list, X_test, X_test_ns, naive_col, col_mask, y_test):
             print()
     return cluster_rmse, naive_rmse
 
-def avg_dec(cluster_rmse, naive_rmse):
+def avg_dec(cluster_rmse, naive_rmse, X, yaxis_units='$/day/store'):
     """
-    Determine average decrease between prediction RMSE and naive RMSE
+    Determine weighted average decrease between prediction RMSE and naive RMSE for clusters
     Inputs:
         cluster_rmse - list of RMSE values for prediction model
         naive_rmse - list of RMSE values for naive model
+        X - features dataframe
+        yaxis_units - units of y-axis
     Returns:
         average overall decrease between models
     """
     avg_dec = []
+    prop_dec = []
+    # get proportion of samples in each cluster
+    prop_arr = (X.groupby('cluster').count() / len(X)).FD_ratio.values
+
     for i in range(0, len(cluster_rmse)):
         if (naive_rmse[i] == 0) & (cluster_rmse[i] == 0):
             continue
         dec = (naive_rmse[i] - cluster_rmse[i]) / naive_rmse[i]
         avg_dec.append(dec)
+        prop_dec.append(prop_arr[i])
         print('Cluster {} decrease: {}'.format(i, round(dec, 3) * 100))
-    return np.mean(avg_dec)
 
-def plot_rmse(cluster_rmse, naive_rmse, yaxis_units='$/day/item', title='Root-Mean-Square Error'):
+    clust_avg_rmse = 0
+    naive_avg_rmse = 0
+    for place, prop in enumerate(prop_dec):
+        clust_avg_rmse += cluster_rmse[place] * prop / sum(prop_dec)
+        naive_avg_rmse += naive_rmse[place] * prop / sum(prop_dec)
+    print()
+    print('Average RMSE decrease ({}): '.format(yaxis_units), naive_avg_rmse - clust_avg_rmse)
+    print()
+
+    weighted_avg_dec = 0
+    for dec, prop in zip(avg_dec, prop_dec):
+        weighted_avg_dec += dec * prop / sum(prop_dec)
+    return weighted_avg_dec
+
+def plot_rmse(cluster_rmse, naive_rmse, X, yaxis_units='$/day/item', title='Root-Mean-Square Error'):
     """
     Visualize difference between prediction RMSE and naive RMSE
     Inputs:
         cluster_rmse - list of RMSE values for prediction model
         naive_rmse - list of RMSE values for naive model
+        X - features dataframe
         yaxis_units - units of y-axis
         title - plot title
     """
@@ -71,8 +92,8 @@ def plot_rmse(cluster_rmse, naive_rmse, yaxis_units='$/day/item', title='Root-Me
     fig = plt.figure(figsize=(6,6))
     ax = fig.add_subplot(1,1,1)
     clusters = np.arange(0, num_clusters)
-    ax.bar(x=clusters, height=cluster_rmse, width=0.4, label='Model')
-    ax.bar(x=np.arange(0.4, num_clusters + 0.4), height=naive_rmse, width=0.4, label='Naive')
+    ax.bar(x=clusters - 0.2, height=cluster_rmse, width=0.4, label='Model')
+    ax.bar(x=np.arange(0.2, num_clusters + 0.2), height=naive_rmse, width=0.4, label='Naive')
     ax.set_xticks(clusters)
     ax.set_xticklabels(clusters)
     ax.set_xlabel('Cluster #')
@@ -80,9 +101,9 @@ def plot_rmse(cluster_rmse, naive_rmse, yaxis_units='$/day/item', title='Root-Me
     ax.set_title(title)
     ax.grid(alpha=0.3)
     ax.legend()
-    print('Average overall decrease: {}%'.format(round(avg_dec(cluster_rmse, naive_rmse), 3) * 100))
-    plt.savefig('../images/{}.png'.format(title.replace(" ", "")))
-    #plt.show()
+    print('Average overall decrease: {}%'.format(round(avg_dec(cluster_rmse, naive_rmse, X, yaxis_units), 3) * 100))
+    plt.savefig('../images/{}.png'.format(title.replace(" ", "")), bbox_inches='tight')
+    plt.show()
 
 def clust_grid(model, params, X_train, y_train, mask_cols):
     """
@@ -102,7 +123,7 @@ def clust_grid(model, params, X_train, y_train, mask_cols):
         print('cluster: ', clust)
         test_model = model
         train_clust_mask = X_train.cluster == str(clust)
-        grid = GridSearchCV(test_model, param_grid=params, verbose=0)
+        grid = GridSearchCV(test_model, param_grid=params, n_jobs=-1, verbose=1)
         grid.fit(X_train[mask_cols][train_clust_mask], y_train[train_clust_mask])
         best_params = grid.best_params_
         print(best_params)
@@ -139,11 +160,12 @@ def class_crossval_plot(X, y, models, scoring='neg_mean_absolute_error'):
     ax.set_xlabel('Model')
     plt.grid(alpha=0.4)
 
-def _split_and_plot(rmse_dict):
+def _split_and_plot(rmse_dict, X):
     """
     Plots results of forc_model_test
     Inputs:
         rmse_dict - dictionary of RMSE values passed by forc_model_test
+        X - features dataframe
     """
     num_clusts = len(rmse_dict['0']['pred'])
     for i in rmse_dict.keys():
@@ -155,7 +177,7 @@ def _split_and_plot(rmse_dict):
                     cluster_rmse[int(clust)] = np.mean(rmse_dict[i][kind][clust])
                 else:
                     naive_rmse[int(clust)] = np.mean(rmse_dict[i][kind][clust])
-        plot_rmse(cluster_rmse, naive_rmse, num_clusts, title='{} Time Period(s) Forward'.format(int(i) + 1))
+        plot_rmse(cluster_rmse, naive_rmse, X, yaxis_units='$/day/store', title='{} Time Period(s) Forward'.format(int(i) + 1))
 
 def forc_model_test(X_test, y_test, test_cluster_models, col_mask, max_periods=10):
     """
@@ -174,7 +196,7 @@ def forc_model_test(X_test, y_test, test_cluster_models, col_mask, max_periods=1
         add_mask = X_test.address1 == add
         foo = X_test[ add_mask ].sort_values('visit_date', ascending=True)
         clust = int(foo.cluster.values[0])
-        # set initial lag variables to current value
+        # set naive prediction as the last visit's (lag1) value
         naive_pred = foo.shrink_value_per_day_lag1_by_store.values[0]
         lag1_val = naive_pred
         lag2_val = foo.shrink_value_per_day_lag2_by_store.values[0]
@@ -194,13 +216,14 @@ def forc_model_test(X_test, y_test, test_cluster_models, col_mask, max_periods=1
             rmse_dict['{}'.format(i)]['pred'][clust].append(pred_rmse)
             rmse_dict['{}'.format(i)]['naive'][clust].append(naive_rmse)
 
+            # set next visit lag1 as current prediction
             lag2_val = lag1_val
             lag1_val = pred
                                 
             i += 1
             if i >= max_periods:
                 break
-    _split_and_plot(rmse_dict)
+    _split_and_plot(rmse_dict, X_test)
 
 def pred_shrink_value(cust_table, start_date, end_date, num_periods):
     """
