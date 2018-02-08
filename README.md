@@ -86,7 +86,7 @@ For the item prediction model, the goal was to be able to predict what an item's
 These predictions were then compared against the actual values, and a Root-Mean-Square Error (RMSE) was calculated. This was compared against the naive RMSE, which assumed that the amount of shrink for a particular item at a specific location would be the same as it was on the previous visit. The two are compared below:
 
 <p align="center">
-<img src="/images/pred_model_result.png" width="50%"> <img src="/images/clust_color_map.png" width="20%">
+<img src="/images/pred_model_result.png" width="40%"> <img src="/images/clust_color_map.png" width="20%">
 </p>
 
 As you can see, the new model lowered the RMSE of each cluster, resulting in an overall **27.0% reduction in RMSE**.
@@ -98,7 +98,7 @@ For the store level forecasting, many of the features used in the prediction mod
 Running a similar test to the prediction model (just with the limited features), the forecast model was about on par (actually slightly worse) with predicting the next shrink value as the naive model: 
 
 <p align="center">
-<img src="/images/TrainingForecast.png" width="50%"> <img src="/images/clust_color_map.png" width="20%">
+<img src="/images/TrainingForecast.png" width="40%"> <img src="/images/clust_color_map.png" width="20%">
 </p>
 
 This wasn't super surprising, given the limited amount of data.
@@ -106,11 +106,11 @@ This wasn't super surprising, given the limited amount of data.
 Next, future visit predictions were made, and an RMSE was again calculated off of the actual value and compared to the naive approach (last visit shrink value extrapolated out). Now, it appears the forecast model was able to pick up better on trends within each store's shrink via the lag columns, and combine this with store demographics to come up with a more accurate forecast than the naive model:
 
 <p align="center">
-<img src="/images/1TimePeriod(s)Forward.png" width="50%"> <img src="/images/2TimePeriod(s)Forward.png" width="50%">
+<img src="/images/1TimePeriod(s)Forward.png" width="40%"> <img src="/images/2TimePeriod(s)Forward.png" width="40%">
 </p>
 
 <p align="center">
-<img src="/images/3TimePeriod(s)Forward.png" width="50%"> <img src="/images/4TimePeriod(s)Forward.png" width="50%">
+<img src="/images/3TimePeriod(s)Forward.png" width="40%"> <img src="/images/4TimePeriod(s)Forward.png" width="40%">
 </p>
 
 Here, a single "time period" refers to the next expected visit by a salesman to a store. This value averages 28 days/store, with a standard deviation of 16 days/store. In this case, the test set allowed for forecasting of 16 weeks (all 12 "time periods" across these 16 weeks can be seen in the "images" folder).
