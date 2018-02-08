@@ -49,6 +49,9 @@ Public data that was considered includes:
 Being public data, this was far from perfect. For example, the most specific location for one of the datasets was on a county level, whereas it would've been preferred to have everything on a zip-code level. 
 Another issue was with the crime data. This intuitively seems like an obvious indicator of convenience store theft. While there was decent correlation, the data was very sparse, and required throwing away ~2/3 of the SRP data available. Ultimately it was decided that cost outweighed benefit, and the crime data wasn't used in the analysis.
 
+The most important addition to the data (according to the feature importances) was the creation of lag columns (see [this Gist](https://gist.github.com/lukeolson13/8047b3ecd54f6d7a02bdc18b8e0212c0) on how this was done). These columns tracked shrink from previous visits for each item at each store. 
+As an overly simplified analogy, one might wish to predict someone's height next month. While the person's shoe size, age, weight, and sex could be used to get a rough estimate, the best indicator will obviously be the person's height today (and at other time points in the past).
+
 ### Customer Segmentation ###
 
 In order to better model both predictions of item shrink value, as well as forecast shrink value for each store, customer segmentation was performed on a per store basis via the following steps:
@@ -72,13 +75,15 @@ The above image uses Principal Component Analysis to show weighted combinations 
 
 ### Model Selection ###
 
-Twelve untuned regression models were tested using K-Fold Cross Validation (three are not pictured), and their negative mean absolute errors were compared:
+The initial hope was to use a time series model, or even something more complex, such as an LSTM (long short-term memory) RNN (recurrent neural network), to model the seasonal fluctuations that, to an extent, theft tends to follow. However, the dataset only included ~11 months of data; therefore, there wasn't enough data to defend using such a model.
+
+Instead, twelve untuned regression models were tested using K-Fold Cross Validation (three are not pictured), and their negative mean absolute errors were compared:
 
 <p align="center">
 <img src="/images/model_selection.png" width="100%">
 </p>
 
-From here, Random Forests, Gradient Boosting, and Multilayer Perceptron were further tested (via GridSearchCV) in order to determine the optimal model for this dataset. Ultimately, Multilayer Perceptron was chosen (a vanilla neural net).
+From here, Random Forests, Gradient Boosting, and Multilayer Perceptron were further tested (via GridSearchCV) in order to determine the optimal model for this dataset. Ultimately, Multilayer Perceptron was chosen (a vanilla neural network).
 
 ### Per Item Prediction ###
 
@@ -93,9 +98,9 @@ As you can see, the new model lowered the RMSE of each cluster, resulting in an 
 
 ### Store Forecasting ###
 
-For the store level forecasting, many of the features used in the prediction model couldn't be used. This is because many of the values are determined on the most recent visit to the store. Obviously, these values aren't known about a store 3 months in advance. What this left was store level information (including the public data), and previous visit shrink value data (the lag columns; see [this Gist](https://gist.github.com/lukeolson13/8047b3ecd54f6d7a02bdc18b8e0212c0) on how this was done). 
+For the store level forecasting, many of the features used in the prediction model couldn't be used. This is because many of the values are determined on the most recent visit to the store. Obviously, these values aren't known multiple months in advance. What this left was store level information (including the public data), previous visit shrink value data (the lag columns), and some rough item level averages per store. 
 
-Running a similar test to the prediction model (just with the limited features), the forecast model was about on par (actually slightly worse) with predicting the next shrink value as the naive model: 
+Running a similar test to the prediction model (just with the limited features), the forecast model was actually slightly worse at predicting the next shrink value compared to the naive model: 
 
 <p align="center">
 <img src="/images/TrainingForecast.png" width="40%"> <img src="/images/clust_color_map.png" width="20%">
@@ -127,4 +132,4 @@ Given the short timespan of this project (two weeks), there's definitely more wo
    - Considering the bias the algorithm may create by segmenting customers by specific demographics, such as race
    - Further tuning of the lag column algorithm
    - Impute the public data to fill some of the nans or look for more different sources that don't result in missing values
-   - Further model tuning: Multilayer Perceptron wasn't chosen because neural nets are the talk of the town, but because it performed the  best. The hyperparameters used were determined by the GridSearchCV, so there is probably room for improvement by further tuning the grid search or looking at this from a model architecture standpoint (ie there should be X hidden layers of size Y because...)
+   - Further model tuning: Multilayer Perceptron wasn't chosen because neural networks are the talk of the town, but because it performed the  best. The hyperparameters used were determined by the GridSearchCV, so there is probably room for improvement by further tuning the grid search or looking at this from a model architecture standpoint (ie there should be X hidden layers of size Y because...)
